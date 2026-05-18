@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { AppSidebar, MobileMonthBar } from "./AppSidebar";
 import { useSettings } from "@/lib/data";
 import { LayoutDashboard, FileText, Settings as SettingsIcon, Menu } from "lucide-react";
@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { cn } from "@/lib/utils";
 
-export function AppShell() {
+export function AppShell({ children }: { children: React.ReactNode }) {
   const { data: settings } = useSettings();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -48,7 +48,7 @@ export function AppShell() {
         <MobileMonthBar />
 
         <main className="flex-1 min-w-0 overflow-x-auto">
-          <Outlet />
+          {children}
         </main>
       </div>
     </div>
