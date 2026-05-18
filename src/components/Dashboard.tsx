@@ -85,7 +85,7 @@ export function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.01 250)" />
                 <XAxis dataKey="label" fontSize={11} />
                 <YAxis fontSize={11} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v: number) => formatBRL(v)} />
+                <Tooltip formatter={(v) => formatBRL(Number(v))} />
                 <Legend />
                 <Bar dataKey="credit" name="Receitas" fill="#5a8a76" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="debit" name="Despesas" fill="#c8634a" radius={[4, 4, 0, 0]} />
@@ -109,7 +109,7 @@ export function Dashboard() {
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(v: number) => formatBRL(v)} />
+                  <Tooltip formatter={(v) => formatBRL(Number(v))} />
                 </PieChart>
               </ResponsiveContainer>
             )}
