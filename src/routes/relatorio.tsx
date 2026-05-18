@@ -1,11 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { Dashboard } from "@/components/Dashboard";
+import { ReportPage } from "@/components/ReportPage";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/relatorio")({
   component: () => (
     <AppShell>
-      <Dashboard />
+      <ReportPage />
     </AppShell>
   ),
 });
