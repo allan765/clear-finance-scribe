@@ -1,0 +1,229 @@
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Classification } from "./classifications";
+
+export type Month = {
+  id: string;
+  reference: string;
+  year: number;
+  month: number;
+  closed: boolean;
+  closed_at: string | null;
+  notes: string | null;
+};
+
+export type Entry = {
+  id: string;
+  month_id: string;
+  doc_number: number;
+  entry_date: string;
+  description: string;
+  classification: Classification;
+  credit: number;
+  debit: number;
+  notes: string | null;
+  receipt_url: string | null;
+  receipt_path: string | null;
+};
+
+export type Settings = {
+  id: string;
+  responsible: string;
+  identification: string;
+  initial_balance: number;
+  period_start: string;
+  period_end: string;
+};
+
+export function useMonths() {
+  return useQuery({
+    queryKey: ["months"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("months")
+        .select("*")
+        .order("reference", { ascending: true });
+      if (error) throw error;
+      return data as Month[];
+    },
+  });
+}
+
+export function useMonth(reference: string) {
+  return useQuery({
+    queryKey: ["month", reference],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("months")
+        .select("*")
+        .eq("reference", reference)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Month | null;
+    },
+    enabled: !!reference,
+  });
+}
+
+export function useEntries(monthId: string | undefined) {
+  return useQuery({
+    queryKey: ["entries", monthId],
+    queryFn: async () => {
+      if (!monthId) return [];
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*")
+        .eq("month_id", monthId)
+        .order("entry_date", { ascending: true })
+        .order("doc_number", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Entry[];
+    },
+    enabled: !!monthId,
+  });
+}
+
+export function useAllEntries() {
+  return useQuery({
+    queryKey: ["entries-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("entries")
+        .select("*, months!inner(reference, year, month)")
+        .order("entry_date", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as (Entry & { months: { reference: string; year: number; month: number } })[];
+    },
+  });
+}
+
+export function useSettings() {
+  return useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Settings | null;
+    },
+  });
+}
+
+export function useUpdateSettings() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: Partial<Settings> & { id: string }) => {
+      const { error } = await supabase
+        .from("settings")
+        .update(patch)
+        .eq("id", patch.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
+  });
+}
+
+export function useCreateEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      month_id: string;
+      entry_date: string;
+      description?: string;
+      classification?: Classification;
+      credit?: number;
+      debit?: number;
+      notes?: string | null;
+    }) => {
+      // Next doc number for that month
+      const { data: maxData } = await supabase
+        .from("entries")
+        .select("doc_number")
+        .eq("month_id", payload.month_id)
+        .order("doc_number", { ascending: false })
+        .limit(1);
+      const next = ((maxData?.[0]?.doc_number as number | undefined) ?? 0) + 1;
+      const { error } = await supabase.from("entries").insert({
+        ...payload,
+        doc_number: next,
+        description: payload.description ?? "",
+        classification: payload.classification ?? "nao_classificado",
+        credit: payload.credit ?? 0,
+        debit: payload.debit ?? 0,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ["entries", vars.month_id] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
+export function useUpdateEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (patch: Partial<Entry> & { id: string }) => {
+      const { error } = await supabase.from("entries").update(patch).eq("id", patch.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
+export function useDeleteEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
+export function useToggleMonthClosed() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, closed }: { id: string; closed: boolean }) => {
+      const { error } = await supabase
+        .from("months")
+        .update({ closed, closed_at: closed ? new Date().toISOString() : null })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["months"] });
+      qc.invalidateQueries({ queryKey: ["month"] });
+    },
+  });
+}
+
+export function useUpdateMonthNotes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
+      const { error } = await supabase.from("months").update({ notes }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["month"] }),
+  });
+}
+
+// Saldo inicial do mês = saldo inicial das settings + soma de (credito-debito) de todos os meses anteriores
+export function computeRunningBalances(entries: Entry[], openingBalance: number) {
+  let running = openingBalance;
+  return entries.map((e) => {
+    running = running + Number(e.credit) - Number(e.debit);
+    return { ...e, balance: running };
+  });
+}
