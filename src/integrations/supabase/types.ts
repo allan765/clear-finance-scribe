@@ -14,7 +14,128 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      entries: {
+        Row: {
+          classification: Database["public"]["Enums"]["classification"]
+          created_at: string
+          credit: number
+          debit: number
+          description: string
+          doc_number: number
+          entry_date: string
+          id: string
+          month_id: string
+          notes: string | null
+          receipt_path: string | null
+          receipt_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          classification?: Database["public"]["Enums"]["classification"]
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string
+          doc_number: number
+          entry_date: string
+          id?: string
+          month_id: string
+          notes?: string | null
+          receipt_path?: string | null
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          classification?: Database["public"]["Enums"]["classification"]
+          created_at?: string
+          credit?: number
+          debit?: number
+          description?: string
+          doc_number?: number
+          entry_date?: string
+          id?: string
+          month_id?: string
+          notes?: string | null
+          receipt_path?: string | null
+          receipt_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entries_month_id_fkey"
+            columns: ["month_id"]
+            isOneToOne: false
+            referencedRelation: "months"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      months: {
+        Row: {
+          closed: boolean
+          closed_at: string | null
+          created_at: string
+          id: string
+          month: number
+          notes: string | null
+          reference: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          closed?: boolean
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          month: number
+          notes?: string | null
+          reference: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          closed?: boolean
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          month?: number
+          notes?: string | null
+          reference?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          id: string
+          identification: string
+          initial_balance: number
+          period_end: string
+          period_start: string
+          responsible: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          identification?: string
+          initial_balance?: number
+          period_end?: string
+          period_start?: string
+          responsible?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          identification?: string
+          initial_balance?: number
+          period_end?: string
+          period_start?: string
+          responsible?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +144,27 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      classification:
+        | "salario"
+        | "supermercado"
+        | "agua_esgoto"
+        | "energia"
+        | "internet"
+        | "telefone"
+        | "combustivel"
+        | "farmacia"
+        | "condominio"
+        | "aplicacao_poupanca"
+        | "transferencias"
+        | "saude"
+        | "educacao"
+        | "lazer"
+        | "vestuario"
+        | "alimentacao"
+        | "transporte"
+        | "impostos"
+        | "outros"
+        | "nao_classificado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +291,29 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      classification: [
+        "salario",
+        "supermercado",
+        "agua_esgoto",
+        "energia",
+        "internet",
+        "telefone",
+        "combustivel",
+        "farmacia",
+        "condominio",
+        "aplicacao_poupanca",
+        "transferencias",
+        "saude",
+        "educacao",
+        "lazer",
+        "vestuario",
+        "alimentacao",
+        "transporte",
+        "impostos",
+        "outros",
+        "nao_classificado",
+      ],
+    },
   },
 } as const
