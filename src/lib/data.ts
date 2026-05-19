@@ -191,6 +191,58 @@ export function useDeleteEntry() {
   });
 }
 
+export function useBulkCreateEntries() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: {
+      month_id: string;
+      items: Array<{
+        entry_date: string;
+        description: string;
+        classification: Classification;
+        credit: number;
+        debit: number;
+      }>;
+    }) => {
+      if (payload.items.length === 0) return 0;
+      const { data: maxData } = await supabase
+        .from("entries")
+        .select("doc_number")
+        .eq("month_id", payload.month_id)
+        .order("doc_number", { ascending: false })
+        .limit(1);
+      let next = ((maxData?.[0]?.doc_number as number | undefined) ?? 0) + 1;
+      const sorted = [...payload.items].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+      const rows = sorted.map((it) => ({
+        month_id: payload.month_id,
+        doc_number: next++,
+        entry_date: it.entry_date,
+        description: it.description,
+        classification: it.classification,
+        credit: it.credit,
+        debit: it.debit,
+      }));
+      const { error } = await supabase.from("entries").insert(rows);
+      if (error) throw error;
+      return rows.length;
+    },
+    onSuccess: (_n, vars) => {
+      qc.invalidateQueries({ queryKey: ["entries", vars.month_id] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
 export function useToggleMonthClosed() {
   const qc = useQueryClient();
   return useMutation({
