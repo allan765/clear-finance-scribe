@@ -2,10 +2,14 @@ import { useMemo, useState } from "react";
 import {
   useMonth, useEntries, useMonths, useSettings,
   useCreateEntry, useUpdateEntry, useDeleteEntry, useToggleMonthClosed, useUpdateMonthNotes,
+  useBulkCreateEntries,
   computeRunningBalances,
   type Entry,
 } from "@/lib/data";
-import { CLASSIFICATIONS, labelOf, type Classification } from "@/lib/classifications";
+import { preparePayload } from "@/lib/import-client";
+import { parseStatement } from "@/lib/import.functions";
+import type { Classification } from "@/lib/classifications";
+import { CLASSIFICATIONS, labelOf } from "@/lib/classifications";
 import { formatBRL, formatNumber, monthLabel } from "@/lib/format";
 import { exportMonthPDF } from "@/lib/export";
 import { uploadReceipt, deleteReceipt } from "@/lib/storage";
@@ -15,7 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Lock, Unlock, Plus, Trash2, FileDown, Paperclip, Search, X, ExternalLink } from "lucide-react";
+import { Lock, Unlock, Plus, Trash2, FileDown, Paperclip, Search, X, ExternalLink, Upload, Loader2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +35,9 @@ export function MonthPage({ reference }: { reference: string }) {
   const deleteEntry = useDeleteEntry();
   const toggleClosed = useToggleMonthClosed();
   const updateNotes = useUpdateMonthNotes();
+  const bulkCreate = useBulkCreateEntries();
+
+  const [importing, setImporting] = useState<null | "bank" | "expense">(null);
 
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<Classification | "all">("all");
@@ -82,6 +90,44 @@ export function MonthPage({ reference }: { reference: string }) {
     toast.success("Lançamento adicionado");
   };
 
+  const handleImport = async (file: File, kind: "bank" | "expense") => {
+    if (!month) return;
+    setImporting(kind);
+    const tid = toast.loading(`Interpretando ${kind === "bank" ? "extrato" : "despesas"} com IA...`);
+    try {
+      const prep = await preparePayload(file);
+      const payload = {
+        kind,
+        monthRef: month.reference,
+        filename: prep.filename,
+        ...(prep.kind === "text" ? { text: prep.text } : { imageDataUrl: prep.imageDataUrl }),
+      };
+      const result = await parseStatement({ data: payload });
+      if (result.transactions.length === 0) {
+        toast.error("Nenhum lançamento encontrado para este mês.", { id: tid });
+        return;
+      }
+      const inserted = await bulkCreate.mutateAsync({
+        month_id: month.id,
+        items: result.transactions.map((t) => ({
+          entry_date: t.date,
+          description: t.description,
+          classification: (t.classification as Classification) ?? "nao_classificado",
+          credit: kind === "expense" ? 0 : Number(t.credit) || 0,
+          debit: kind === "expense"
+            ? (Number(t.debit) || Number(t.credit) || 0)
+            : Number(t.debit) || 0,
+        })),
+      });
+      toast.success(`${inserted} lançamento(s) importado(s). Revise os marcados como "Não classificado".`, { id: tid });
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Falha ao importar", { id: tid });
+    } finally {
+      setImporting(null);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -92,6 +138,11 @@ export function MonthPage({ reference }: { reference: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ImportButton
+            disabled={month.closed || !!importing}
+            importing={importing}
+            onPick={handleImport}
+          />
           <Button
             variant="outline"
             size="sm"
@@ -396,5 +447,49 @@ function NotesButton({ entry, disabled, onUpdate }: { entry: Entry; disabled: bo
         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
       </svg>
     </button>
+  );
+}
+
+function ImportButton({ disabled, importing, onPick }: {
+  disabled: boolean;
+  importing: null | "bank" | "expense";
+  onPick: (file: File, kind: "bank" | "expense") => void;
+}) {
+  const pick = (kind: "bank" | "expense") => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".pdf,.csv,.ofx,.qif,.txt,image/*";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) onPick(f, kind);
+    };
+    input.click();
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" disabled={disabled}>
+          {importing ? (
+            <><Loader2 className="size-4 mr-1 animate-spin" /> Importando...</>
+          ) : (
+            <><Upload className="size-4 mr-1" /> Importar</>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuItem onClick={() => pick("bank")}>
+          <div>
+            <div className="font-medium">Extrato bancário</div>
+            <div className="text-xs text-muted-foreground">PDF, CSV, OFX ou imagem</div>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => pick("expense")}>
+          <div>
+            <div className="font-medium">Relatório de despesas</div>
+            <div className="text-xs text-muted-foreground">PDF, planilha ou imagem</div>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
