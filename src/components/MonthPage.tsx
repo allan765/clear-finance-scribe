@@ -35,6 +35,9 @@ export function MonthPage({ reference }: { reference: string }) {
   const deleteEntry = useDeleteEntry();
   const toggleClosed = useToggleMonthClosed();
   const updateNotes = useUpdateMonthNotes();
+  const bulkCreate = useBulkCreateEntries();
+
+  const [importing, setImporting] = useState<null | "bank" | "expense">(null);
 
   const [search, setSearch] = useState("");
   const [classFilter, setClassFilter] = useState<Classification | "all">("all");
