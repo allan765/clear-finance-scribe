@@ -232,16 +232,6 @@ export function useBulkCreateEntries() {
     },
   });
 }
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("entries").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["entries"] });
-      qc.invalidateQueries({ queryKey: ["entries-all"] });
-    },
-  });
-}
 
 export function useToggleMonthClosed() {
   const qc = useQueryClient();
