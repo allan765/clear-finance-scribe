@@ -2,10 +2,14 @@ import { useMemo, useState } from "react";
 import {
   useMonth, useEntries, useMonths, useSettings,
   useCreateEntry, useUpdateEntry, useDeleteEntry, useToggleMonthClosed, useUpdateMonthNotes,
+  useBulkCreateEntries,
   computeRunningBalances,
   type Entry,
 } from "@/lib/data";
-import { CLASSIFICATIONS, labelOf, type Classification } from "@/lib/classifications";
+import { preparePayload } from "@/lib/import-client";
+import { parseStatement } from "@/lib/import.functions";
+import type { Classification } from "@/lib/classifications";
+import { CLASSIFICATIONS, labelOf } from "@/lib/classifications";
 import { formatBRL, formatNumber, monthLabel } from "@/lib/format";
 import { exportMonthPDF } from "@/lib/export";
 import { uploadReceipt, deleteReceipt } from "@/lib/storage";
