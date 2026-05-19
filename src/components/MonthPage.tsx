@@ -96,7 +96,7 @@ export function MonthPage({ reference }: { reference: string }) {
     const tid = toast.loading(`Interpretando ${kind === "bank" ? "extrato" : "despesas"} com IA...`);
     try {
       const prep = await preparePayload(file);
-      const payload: Parameters<typeof parseStatement>[0]["data"] = {
+      const payload = {
         kind,
         monthRef: month.reference,
         filename: prep.filename,
