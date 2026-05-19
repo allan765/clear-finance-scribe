@@ -138,6 +138,11 @@ export function MonthPage({ reference }: { reference: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ImportButton
+            disabled={month.closed || !!importing}
+            importing={importing}
+            onPick={handleImport}
+          />
           <Button
             variant="outline"
             size="sm"
