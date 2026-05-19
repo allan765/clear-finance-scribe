@@ -449,3 +449,47 @@ function NotesButton({ entry, disabled, onUpdate }: { entry: Entry; disabled: bo
     </button>
   );
 }
+
+function ImportButton({ disabled, importing, onPick }: {
+  disabled: boolean;
+  importing: null | "bank" | "expense";
+  onPick: (file: File, kind: "bank" | "expense") => void;
+}) {
+  const pick = (kind: "bank" | "expense") => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".pdf,.csv,.ofx,.qif,.txt,image/*";
+    input.onchange = () => {
+      const f = input.files?.[0];
+      if (f) onPick(f, kind);
+    };
+    input.click();
+  };
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" disabled={disabled}>
+          {importing ? (
+            <><Loader2 className="size-4 mr-1 animate-spin" /> Importando...</>
+          ) : (
+            <><Upload className="size-4 mr-1" /> Importar</>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-64">
+        <DropdownMenuItem onClick={() => pick("bank")}>
+          <div>
+            <div className="font-medium">Extrato bancário</div>
+            <div className="text-xs text-muted-foreground">PDF, CSV, OFX ou imagem</div>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => pick("expense")}>
+          <div>
+            <div className="font-medium">Relatório de despesas</div>
+            <div className="text-xs text-muted-foreground">PDF, planilha ou imagem</div>
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
