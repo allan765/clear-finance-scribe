@@ -90,6 +90,44 @@ export function MonthPage({ reference }: { reference: string }) {
     toast.success("Lançamento adicionado");
   };
 
+  const handleImport = async (file: File, kind: "bank" | "expense") => {
+    if (!month) return;
+    setImporting(kind);
+    const tid = toast.loading(`Interpretando ${kind === "bank" ? "extrato" : "despesas"} com IA...`);
+    try {
+      const prep = await preparePayload(file);
+      const payload: Parameters<typeof parseStatement>[0]["data"] = {
+        kind,
+        monthRef: month.reference,
+        filename: prep.filename,
+        ...(prep.kind === "text" ? { text: prep.text } : { imageDataUrl: prep.imageDataUrl }),
+      };
+      const result = await parseStatement({ data: payload });
+      if (result.transactions.length === 0) {
+        toast.error("Nenhum lançamento encontrado para este mês.", { id: tid });
+        return;
+      }
+      const inserted = await bulkCreate.mutateAsync({
+        month_id: month.id,
+        items: result.transactions.map((t) => ({
+          entry_date: t.date,
+          description: t.description,
+          classification: (t.classification as Classification) ?? "nao_classificado",
+          credit: kind === "expense" ? 0 : Number(t.credit) || 0,
+          debit: kind === "expense"
+            ? (Number(t.debit) || Number(t.credit) || 0)
+            : Number(t.debit) || 0,
+        })),
+      });
+      toast.success(`${inserted} lançamento(s) importado(s). Revise os marcados como "Não classificado".`, { id: tid });
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Falha ao importar", { id: tid });
+    } finally {
+      setImporting(null);
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
