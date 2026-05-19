@@ -96,12 +96,21 @@ export function MonthPage({ reference }: { reference: string }) {
     const tid = toast.loading(`Interpretando ${kind === "bank" ? "extrato" : "despesas"} com IA...`);
     try {
       const prep = await preparePayload(file);
-      const payload = {
+      const payload: {
+        kind: "bank" | "expense";
+        monthRef: string;
+        filename: string;
+        text?: string;
+        imageDataUrl?: string;
+        imageDataUrls?: string[];
+      } = {
         kind,
         monthRef: month.reference,
         filename: prep.filename,
-        ...(prep.kind === "text" ? { text: prep.text } : { imageDataUrl: prep.imageDataUrl }),
       };
+      if (prep.kind === "text") payload.text = prep.text;
+      else if (prep.kind === "image") payload.imageDataUrl = prep.imageDataUrl;
+      else payload.imageDataUrls = prep.imageDataUrls;
       const result = await parseStatement({ data: payload });
       if (result.transactions.length === 0) {
         toast.error("Nenhum lançamento encontrado para este mês.", { id: tid });
