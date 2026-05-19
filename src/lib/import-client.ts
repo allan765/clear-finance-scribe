@@ -1,7 +1,6 @@
 // Helpers de extração client-side antes de enviar para a IA
 import * as pdfjsLib from "pdfjs-dist";
 // Worker como módulo (Vite resolve)
-// @ts-expect-error - vite ?url import
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
