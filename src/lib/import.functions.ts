@@ -6,16 +6,19 @@ const ParsedTxnSchema = z.object({
   description: z.string(),
   credit: z.number().default(0),
   debit: z.number().default(0),
+  balance: z.number().nullable().optional(),
   classification: z.string().default("nao_classificado"),
 });
 
 const InputSchema = z.object({
   kind: z.enum(["bank", "expense"]),
   monthRef: z.string().regex(/^\d{4}-\d{2}$/),
-  // For text-based files (CSV/OFX/TXT/PDF-extracted text)
+  // Conteúdo textual (CSV/OFX/TXT/PDF com texto extraído)
   text: z.string().optional(),
-  // For images: data URL (data:image/...;base64,xxxx)
+  // Imagem única (data URL)
   imageDataUrl: z.string().optional(),
+  // Múltiplas imagens (ex.: páginas de PDF escaneado)
+  imageDataUrls: z.array(z.string()).optional(),
   filename: z.string().optional(),
 });
 
@@ -35,42 +38,54 @@ export const parseStatement = createServerFn({ method: "POST" })
     const [yearStr, monthStr] = data.monthRef.split("-");
     const monthNum = Number(monthStr);
     const yearNum = Number(yearStr);
+    const mm = monthNum.toString().padStart(2, "0");
 
-    const systemPrompt = `Você é um especialista em interpretar extratos bancários e relatórios de despesas brasileiros.
-Extraia TODOS os lançamentos financeiros do conteúdo fornecido.
-Retorne APENAS lançamentos do mês ${monthNum.toString().padStart(2, "0")}/${yearNum}.
+    const hasImages = !!data.imageDataUrl || (data.imageDataUrls && data.imageDataUrls.length > 0);
+
+    const systemPrompt = `Você é um especialista em interpretar EXTRATOS BANCÁRIOS e RELATÓRIOS DE DESPESAS brasileiros, mesmo quando vêm de PDFs digitalizados, com OCR de baixa qualidade, tabelas quebradas ou textos desalinhados.
+
+OBJETIVO: extrair TODOS os lançamentos financeiros do conteúdo e retornar APENAS os do mês ${mm}/${yearNum}.
+
 ${data.kind === "bank"
-  ? "Este é um EXTRATO BANCÁRIO. Identifique créditos (entradas) e débitos (saídas)."
-  : "Este é um RELATÓRIO DE DESPESAS. Todos os valores devem ir em 'debit' (saídas)."}
+  ? `Este é um EXTRATO BANCÁRIO. Para cada linha real de movimentação identifique:
+- Data da movimentação (DD/MM/AAAA → converta para YYYY-MM-DD)
+- Histórico/descrição (limpe códigos internos, agências, números longos sem sentido)
+- Tipo: ENTRADA (crédito) ou SAÍDA (débito) — use sinais (-), parênteses, colunas "D"/"C", palavras como "DEB", "CRED", "Saque", "TED enviado", "PIX enviado/recebido", "TARIFA"
+- Valor (sempre positivo, em reais — use ponto como decimal)
+- Saldo final da linha (se houver) → campo "balance"`
+  : `Este é um RELATÓRIO DE DESPESAS. Todos os valores devem ir em "debit" (saídas). "credit" sempre 0.`}
 
-Para cada lançamento, classifique em UMA das categorias:
+Para cada lançamento, classifique em UMA destas categorias:
 ${CLASSIFICATIONS.join(", ")}
 
-Regras:
-- date: formato YYYY-MM-DD
-- description: texto descritivo limpo (sem códigos internos)
-- credit: valor positivo se for entrada (senão 0)
-- debit: valor positivo se for saída (senão 0)
-- Use "nao_classificado" se tiver dúvida
-- IGNORE saldos, totalizadores e cabeçalhos — só lançamentos reais
-- Ordene por data crescente`;
+REGRAS IMPORTANTES:
+- date: SEMPRE no formato YYYY-MM-DD
+- description: texto descritivo limpo e legível
+- credit: número positivo se entrada, senão 0
+- debit: número positivo se saída, senão 0
+- balance: número (positivo ou negativo) representando saldo após o lançamento; null se não houver
+- Use "nao_classificado" quando estiver em dúvida
+- IGNORE: saldos de abertura/fechamento isolados, totais, subtotais, cabeçalhos, rodapés, "SALDO DO DIA", "SALDO ANTERIOR", "SALDO BLOQUEADO" — apenas LANÇAMENTOS REAIS
+- IGNORE linhas duplicadas (ex.: descrição repetida em quebra de página)
+- Ordene por data crescente
+- Se uma data estiver ambígua (ex.: só "15/06"), assuma o mês/ano alvo: ${mm}/${yearNum}`;
 
     const userContent: Array<Record<string, unknown>> = [];
     if (data.text) {
       userContent.push({
         type: "text",
-        text: `Arquivo: ${data.filename ?? "documento"}\n\nConteúdo:\n${data.text.slice(0, 120000)}`,
+        text: `Arquivo: ${data.filename ?? "documento"}\n\nConteúdo extraído:\n${data.text.slice(0, 150000)}`,
       });
     }
-    if (data.imageDataUrl) {
-      userContent.push({
-        type: "text",
-        text: `Arquivo: ${data.filename ?? "imagem"}. Extraia os lançamentos da imagem.`,
-      });
-      userContent.push({
-        type: "image_url",
-        image_url: { url: data.imageDataUrl },
-      });
+    if (hasImages) {
+      const intro = data.text
+        ? `Imagens das páginas do documento "${data.filename ?? ""}" (use como fonte primária — o texto extraído pode estar incompleto).`
+        : `Arquivo: ${data.filename ?? "imagem"}. Extraia os lançamentos diretamente das imagens (pode ser PDF escaneado).`;
+      userContent.push({ type: "text", text: intro });
+      const urls = data.imageDataUrls ?? (data.imageDataUrl ? [data.imageDataUrl] : []);
+      for (const url of urls) {
+        userContent.push({ type: "image_url", image_url: { url } });
+      }
     }
     if (userContent.length === 0) throw new Error("Nenhum conteúdo enviado");
 
@@ -92,6 +107,7 @@ Regras:
                     description: { type: "string" },
                     credit: { type: "number" },
                     debit: { type: "number" },
+                    balance: { type: ["number", "null"], description: "Saldo após o lançamento, se disponível" },
                     classification: { type: "string", enum: CLASSIFICATIONS },
                   },
                   required: ["date", "description", "credit", "debit", "classification"],
@@ -104,6 +120,9 @@ Regras:
       },
     ];
 
+    // Usa modelo mais robusto quando há imagens (OCR/visão), e o flash para texto puro
+    const model = hasImages ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -111,7 +130,7 @@ Regras:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userContent },
