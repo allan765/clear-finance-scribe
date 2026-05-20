@@ -347,25 +347,19 @@ function EntryRow({ entry, readOnly, onUpdate, onDelete }: {
         </Select>
       </td>
       <td className="num">
-        <Input
-          type="number" step="0.01" min="0"
-          value={v.credit ? String(v.credit) : ""}
+        <BRNumberInput
+          value={v.credit}
           disabled={readOnly}
-          onChange={(e) => setEditing((p) => ({ ...p, credit: e.target.value === "" ? 0 : Number(e.target.value) }))}
-          onBlur={commit}
-          className="h-7 text-xs text-right border-0 bg-transparent px-1"
-          placeholder="-"
+          onChange={(n) => setEditing((p) => ({ ...p, credit: n }))}
+          onCommit={commit}
         />
       </td>
       <td className="num">
-        <Input
-          type="number" step="0.01" min="0"
-          value={v.debit ? String(v.debit) : ""}
+        <BRNumberInput
+          value={v.debit}
           disabled={readOnly}
-          onChange={(e) => setEditing((p) => ({ ...p, debit: e.target.value === "" ? 0 : Number(e.target.value) }))}
-          onBlur={commit}
-          className="h-7 text-xs text-right border-0 bg-transparent px-1"
-          placeholder="-"
+          onChange={(n) => setEditing((p) => ({ ...p, debit: n }))}
+          onCommit={commit}
         />
       </td>
       <td className="num font-semibold tabular-nums">{formatBRL(entry.balance)}</td>
