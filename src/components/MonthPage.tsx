@@ -496,3 +496,52 @@ function ImportButton({ disabled, importing, onPick }: {
     </DropdownMenu>
   );
 }
+
+function BRNumberInput({ value, disabled, onChange, onCommit }: {
+  value: number;
+  disabled: boolean;
+  onChange: (n: number) => void;
+  onCommit: () => void;
+}) {
+  const format = (n: number) =>
+    !n ? "" : new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+  const parse = (s: string): number => {
+    const cleaned = s.replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  };
+  const [focused, setFocused] = useState(false);
+  const [text, setText] = useState<string>(format(Number(value) || 0));
+  const lastValueRef = (BRNumberInput as unknown as { _r?: WeakMap<object, number> });
+  // Sync when external value changes and not focused
+  const numValue = Number(value) || 0;
+  React.useEffect(() => {
+    if (!focused) setText(format(numValue));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numValue, focused]);
+  void lastValueRef;
+
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      value={text}
+      disabled={disabled}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => {
+        const s = e.target.value;
+        setText(s);
+        onChange(parse(s));
+      }}
+      onBlur={() => {
+        setFocused(false);
+        const n = parse(text);
+        setText(format(n));
+        onCommit();
+      }}
+      className="h-7 text-xs text-right border-0 bg-transparent px-1 tabular-nums"
+      placeholder="-"
+    />
+  );
+}
+
