@@ -104,7 +104,7 @@ export function Dashboard() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={80} isAnimationActive={false} activeShape={false}>
+                  <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={80} isAnimationActive={false}>
                     {categoryData.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
