@@ -87,8 +87,8 @@ export function Dashboard() {
                 <YAxis fontSize={11} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v) => formatBRL(Number(v))} cursor={{ fill: "oklch(0.95 0.01 250)" }} />
                 <Legend />
-                <Bar dataKey="credit" name="Receitas" fill="#5a8a76" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
-                <Bar dataKey="debit" name="Despesas" fill="#c8634a" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
+                <Bar dataKey="credit" name="Receitas" fill="#5a8a76" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="debit" name="Despesas" fill="#c8634a" radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
