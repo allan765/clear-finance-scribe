@@ -87,8 +87,8 @@ export function Dashboard() {
                 <YAxis fontSize={11} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
                 <Tooltip formatter={(v) => formatBRL(Number(v))} cursor={{ fill: "oklch(0.95 0.01 250)" }} />
                 <Legend />
-                <Bar dataKey="credit" name="Receitas" fill="#5a8a76" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
-                <Bar dataKey="debit" name="Despesas" fill="#c8634a" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
+                <Bar dataKey="credit" name="Receitas" fill="#5a8a76" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey="debit" name="Despesas" fill="#c8634a" radius={[4, 4, 0, 0]} isAnimationActive={false} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -104,7 +104,7 @@ export function Dashboard() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={80} isAnimationActive={false} activeShape={false}>
+                  <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={80} isAnimationActive={false}>
                     {categoryData.map((_, i) => (
                       <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                     ))}
