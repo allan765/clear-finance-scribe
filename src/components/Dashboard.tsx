@@ -3,10 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useAllEntries, useMonths, useSettings } from "@/lib/data";
 import { formatBRL, monthLabel, monthShort } from "@/lib/format";
 import { labelOf } from "@/lib/classifications";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 import { TrendingUp, TrendingDown, Wallet, AlertCircle, Lock, FilePlus } from "lucide-react";
-
-const PIE_COLORS = ["#2c3e6e", "#d4a84b", "#5a8a76", "#c8634a", "#7a5a9e", "#4a8aae", "#aa6c4c", "#6a8e3d", "#a44c6e", "#506a8a", "#8c8c8c"];
 
 export function Dashboard() {
   const { data: months = [] } = useMonths();
@@ -37,6 +34,10 @@ export function Dashboard() {
     });
   }, [months, entries]);
 
+  const monthlyMax = useMemo(() => {
+    return monthlyData.reduce((max, item) => Math.max(max, item.credit, item.debit), 0);
+  }, [monthlyData]);
+
   const categoryData = useMemo(() => {
     const map = new Map<string, number>();
     for (const e of entries) {
@@ -49,6 +50,10 @@ export function Dashboard() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 11);
   }, [entries]);
+
+  const categoryMax = useMemo(() => {
+    return categoryData.reduce((max, item) => Math.max(max, item.value), 0);
+  }, [categoryData]);
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -79,39 +84,56 @@ export function Dashboard() {
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card border rounded p-4">
           <h2 className="font-serif font-semibold mb-3">Receitas vs Despesas por mês</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.01 250)" />
-                <XAxis dataKey="label" fontSize={11} />
-                <YAxis fontSize={11} tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`} />
-                <Tooltip formatter={(v) => formatBRL(Number(v))} cursor={{ fill: "oklch(0.95 0.01 250)" }} />
-                <Legend />
-                <Bar dataKey="credit" name="Receitas" fill="#5a8a76" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey="debit" name="Despesas" fill="#c8634a" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="space-y-3">
+            {monthlyData.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
+                Nenhum mês disponível ainda.
+              </div>
+            ) : (
+              monthlyData.map((item) => (
+                <div key={item.ref} className="grid gap-2 rounded border border-border p-3 md:grid-cols-[90px_1fr_112px] md:items-center">
+                  <div className="text-sm font-medium text-foreground">{item.label}</div>
+                  <div className="space-y-2">
+                    <MetricBar
+                      label="Receitas"
+                      value={item.credit}
+                      max={monthlyMax}
+                      tone="success"
+                    />
+                    <MetricBar
+                      label="Despesas"
+                      value={item.debit}
+                      max={monthlyMax}
+                      tone="destructive"
+                    />
+                  </div>
+                  <div className="text-right text-xs text-muted-foreground space-y-1">
+                    <div>{formatBRL(item.credit)}</div>
+                    <div>{formatBRL(item.debit)}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         <div className="bg-card border rounded p-4">
           <h2 className="font-serif font-semibold mb-3">Despesas por categoria</h2>
-          <div className="h-64">
+          <div className="space-y-3 min-h-64">
             {categoryData.length === 0 ? (
-              <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+              <div className="h-64 flex items-center justify-center text-sm text-muted-foreground">
                 Nenhum lançamento classificado ainda.
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={40} outerRadius={80} isAnimationActive={false}>
-                    {categoryData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => formatBRL(Number(v))} />
-                </PieChart>
-              </ResponsiveContainer>
+              categoryData.map((item, index) => (
+                <CategoryRow
+                  key={item.name}
+                  name={item.name}
+                  value={item.value}
+                  max={categoryMax}
+                  tone={index % 4}
+                />
+              ))
             )}
           </div>
         </div>
@@ -174,6 +196,37 @@ function KPI({ label, value, icon, tone }: { label: string; value: string; icon:
         <div className={`size-9 rounded flex items-center justify-center ${toneClass}`}>{icon}</div>
       </div>
       <div className="mt-2 font-serif text-xl md:text-2xl font-bold text-foreground tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+function MetricBar({ label, value, max, tone }: { label: string; value: number; max: number; tone: "success" | "destructive" }) {
+  const width = max > 0 ? Math.max((value / max) * 100, value > 0 ? 6 : 0) : 0;
+  const fillClass = tone === "success" ? "bg-success" : "bg-destructive";
+
+  return (
+    <div className="grid grid-cols-[70px_1fr] items-center gap-2">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</span>
+      <div className="h-2.5 rounded bg-muted overflow-hidden">
+        <div className={`h-full rounded ${fillClass}`} style={{ width: `${Math.min(width, 100)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function CategoryRow({ name, value, max, tone }: { name: string; value: number; max: number; tone: number }) {
+  const width = max > 0 ? Math.max((value / max) * 100, 8) : 0;
+  const fillClass = ["bg-primary", "bg-secondary", "bg-accent", "bg-muted-foreground"][tone] ?? "bg-primary";
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span className="truncate text-foreground">{name}</span>
+        <span className="shrink-0 text-muted-foreground">{formatBRL(value)}</span>
+      </div>
+      <div className="h-2.5 rounded bg-muted overflow-hidden">
+        <div className={`h-full rounded ${fillClass}`} style={{ width: `${Math.min(width, 100)}%` }} />
+      </div>
     </div>
   );
 }
