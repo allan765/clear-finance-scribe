@@ -181,8 +181,17 @@ export function useDeleteEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Buscar o month_id antes de deletar para renumerar depois
+      const { data: target } = await supabase
+        .from("entries")
+        .select("month_id")
+        .eq("id", id)
+        .maybeSingle();
       const { error } = await supabase.from("entries").delete().eq("id", id);
       if (error) throw error;
+      if (target?.month_id) {
+        await renumberDocs(target.month_id as string);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
@@ -190,6 +199,45 @@ export function useDeleteEntry() {
     },
   });
 }
+
+// Reorganiza os Nº Doc. de um mês para 1..N preservando a ordem atual (doc_number ASC).
+async function renumberDocs(monthId: string) {
+  const { data: rows, error } = await supabase
+    .from("entries")
+    .select("id, doc_number")
+    .eq("month_id", monthId)
+    .order("doc_number", { ascending: true });
+  if (error || !rows) return;
+  // 1ª passada: deslocar para um range alto para evitar colisão caso surja UNIQUE no futuro
+  const offset = 100000;
+  for (let i = 0; i < rows.length; i++) {
+    const desired = i + 1;
+    if (rows[i].doc_number !== desired) {
+      await supabase.from("entries").update({ doc_number: offset + desired }).eq("id", rows[i].id);
+    }
+  }
+  // 2ª passada: aplicar o número final
+  for (let i = 0; i < rows.length; i++) {
+    const desired = i + 1;
+    if (rows[i].doc_number !== desired) {
+      await supabase.from("entries").update({ doc_number: desired }).eq("id", rows[i].id);
+    }
+  }
+}
+
+export function useRenumberDocs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (monthId: string) => {
+      await renumberDocs(monthId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
 
 export function useBulkCreateEntries() {
   const qc = useQueryClient();
