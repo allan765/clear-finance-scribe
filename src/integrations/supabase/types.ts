@@ -175,6 +175,12 @@ export type Database = {
         | "iptu"
         | "cartorio"
         | "pix_recebido"
+        | "faxina"
+        | "equipamento_acessibilidade"
+        | "e_social"
+        | "irrf"
+        | "despesas_animais"
+        | "despesa_fazenda"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -333,6 +339,12 @@ export const Constants = {
         "iptu",
         "cartorio",
         "pix_recebido",
+        "faxina",
+        "equipamento_acessibilidade",
+        "e_social",
+        "irrf",
+        "despesas_animais",
+        "despesa_fazenda",
       ],
     },
   },
