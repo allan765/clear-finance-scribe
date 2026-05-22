@@ -67,7 +67,7 @@ REGRAS IMPORTANTES:
 - Use "nao_classificado" quando estiver em dúvida
 - IGNORE: saldos de abertura/fechamento isolados, totais, subtotais, cabeçalhos, rodapés, "SALDO DO DIA", "SALDO ANTERIOR", "SALDO BLOQUEADO" — apenas LANÇAMENTOS REAIS
 - IGNORE linhas duplicadas (ex.: descrição repetida em quebra de página)
-- Ordene por data crescente
+- PRESERVE A ORDEM ORIGINAL do documento (de cima para baixo, na sequência exata em que aparecem no extrato) — NÃO reordene por data
 - Se uma data estiver ambígua (ex.: só "15/06"), assuma o mês/ano alvo: ${mm}/${yearNum}`;
 
     const userContent: Array<Record<string, unknown>> = [];
@@ -155,10 +155,9 @@ REGRAS IMPORTANTES:
     const args = JSON.parse(toolCall.function.arguments);
     const parsed = z.array(ParsedTxnSchema).parse(args.transactions ?? []);
 
-    // Filtrar somente o mês alvo e ordenar por data
-    const filtered = parsed
-      .filter((t) => t.date.startsWith(data.monthRef))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    // Filtrar somente o mês alvo — preservando a ORDEM ORIGINAL do extrato/documento
+    const filtered = parsed.filter((t) => t.date.startsWith(data.monthRef));
 
     return { transactions: filtered };
   });
+
