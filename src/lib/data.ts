@@ -74,7 +74,6 @@ export function useEntries(monthId: string | undefined) {
         .from("entries")
         .select("*")
         .eq("month_id", monthId)
-        .order("entry_date", { ascending: true })
         .order("doc_number", { ascending: true });
       if (error) throw error;
       return (data ?? []) as Entry[];
@@ -82,6 +81,7 @@ export function useEntries(monthId: string | undefined) {
     enabled: !!monthId,
   });
 }
+
 
 export function useAllEntries() {
   return useQuery({
