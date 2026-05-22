@@ -27,6 +27,12 @@ export type Classification =
   | "guia_simples_nacional"
   | "iptu"
   | "cartorio"
+  | "faxina"
+  | "equipamento_acessibilidade"
+  | "e_social"
+  | "irrf"
+  | "despesas_animais"
+  | "despesa_fazenda"
   | "outros"
   | "nao_classificado";
 
@@ -57,8 +63,14 @@ export const CLASSIFICATIONS: { value: Classification; label: string }[] = [
   { value: "impostos", label: "Impostos" },
   { value: "darf_unificado", label: "DARF Unificado" },
   { value: "guia_simples_nacional", label: "Guia do Simples Nacional" },
-  { value: "iptu", label: "IPTU" },
+  { value: "iptu", label: "Iptu" },
   { value: "cartorio", label: "Cartório" },
+  { value: "faxina", label: "Faxina" },
+  { value: "equipamento_acessibilidade", label: "Equipamento de acessibilidade" },
+  { value: "e_social", label: "E-Social" },
+  { value: "irrf", label: "IRRF" },
+  { value: "despesas_animais", label: "Despesas com animais" },
+  { value: "despesa_fazenda", label: "Despesa com a fazenda" },
   { value: "outros", label: "Outros" },
   { value: "nao_classificado", label: "— Não classificado —" },
 ];
