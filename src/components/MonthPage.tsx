@@ -307,7 +307,21 @@ function EntryRow({ entry, readOnly, onUpdate, onDelete }: {
 
   return (
     <tr className={cn(isUnclassified && "bg-warning/10")}>
-      <td className="center font-medium">{entry.doc_number}</td>
+      <td className="center font-medium">
+        <Input
+          type="number"
+          min={1}
+          step={1}
+          value={v.doc_number ?? entry.doc_number}
+          disabled={readOnly}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            setEditing((p) => ({ ...p, doc_number: Number.isFinite(n) ? n : entry.doc_number }));
+          }}
+          onBlur={commit}
+          className="h-7 text-xs px-1 border-0 bg-transparent text-center w-14"
+        />
+      </td>
       <td className="center">
         <Input
           type="date"
@@ -318,6 +332,7 @@ function EntryRow({ entry, readOnly, onUpdate, onDelete }: {
           className="h-7 text-xs px-1.5 border-0 bg-transparent"
         />
       </td>
+
       <td>
         <Input
           value={v.description}
