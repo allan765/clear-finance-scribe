@@ -23,10 +23,13 @@ const InputSchema = z.object({
 });
 
 const CLASSIFICATIONS = [
-  "salario","supermercado","agua_esgoto","energia","internet","telefone",
-  "combustivel","farmacia","condominio","aplicacao_poupanca","transferencias",
-  "saude","educacao","lazer","vestuario","alimentacao","transporte","impostos",
-  "outros","nao_classificado",
+  "salario","rendimento","aposentadoria","reembolso","pix_recebido",
+  "supermercado","agua_esgoto","energia","internet","telefone",
+  "combustivel","farmacia","condominio","cartao_credito","aplicacao_poupanca",
+  "transferencias","saque","saude","educacao","lazer","vestuario",
+  "alimentacao","transporte","impostos","darf_unificado","guia_simples_nacional",
+  "iptu","cartorio","faxina","equipamento_acessibilidade","e_social",
+  "irrf","despesas_animais","despesa_fazenda","outros","nao_classificado",
 ];
 
 export const parseStatement = createServerFn({ method: "POST" })
