@@ -165,6 +165,16 @@ export type Database = {
         | "impostos"
         | "outros"
         | "nao_classificado"
+        | "rendimento"
+        | "cartao_credito"
+        | "aposentadoria"
+        | "reembolso"
+        | "saque"
+        | "darf_unificado"
+        | "guia_simples_nacional"
+        | "iptu"
+        | "cartorio"
+        | "pix_recebido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -313,6 +323,16 @@ export const Constants = {
         "impostos",
         "outros",
         "nao_classificado",
+        "rendimento",
+        "cartao_credito",
+        "aposentadoria",
+        "reembolso",
+        "saque",
+        "darf_unificado",
+        "guia_simples_nacional",
+        "iptu",
+        "cartorio",
+        "pix_recebido",
       ],
     },
   },
