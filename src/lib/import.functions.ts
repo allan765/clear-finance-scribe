@@ -67,7 +67,7 @@ REGRAS IMPORTANTES:
 - Use "nao_classificado" quando estiver em dúvida
 - IGNORE: saldos de abertura/fechamento isolados, totais, subtotais, cabeçalhos, rodapés, "SALDO DO DIA", "SALDO ANTERIOR", "SALDO BLOQUEADO" — apenas LANÇAMENTOS REAIS
 - IGNORE linhas duplicadas (ex.: descrição repetida em quebra de página)
-- Ordene por data crescente
+- PRESERVE A ORDEM ORIGINAL do documento (de cima para baixo, na sequência exata em que aparecem no extrato) — NÃO reordene por data
 - Se uma data estiver ambígua (ex.: só "15/06"), assuma o mês/ano alvo: ${mm}/${yearNum}`;
 
     const userContent: Array<Record<string, unknown>> = [];
