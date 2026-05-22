@@ -155,10 +155,9 @@ REGRAS IMPORTANTES:
     const args = JSON.parse(toolCall.function.arguments);
     const parsed = z.array(ParsedTxnSchema).parse(args.transactions ?? []);
 
-    // Filtrar somente o mês alvo e ordenar por data
-    const filtered = parsed
-      .filter((t) => t.date.startsWith(data.monthRef))
-      .sort((a, b) => a.date.localeCompare(b.date));
+    // Filtrar somente o mês alvo — preservando a ORDEM ORIGINAL do extrato/documento
+    const filtered = parsed.filter((t) => t.date.startsWith(data.monthRef));
 
     return { transactions: filtered };
   });
+
