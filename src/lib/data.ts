@@ -260,8 +260,9 @@ export function useBulkCreateEntries() {
         .order("doc_number", { ascending: false })
         .limit(1);
       let next = ((maxData?.[0]?.doc_number as number | undefined) ?? 0) + 1;
-      const sorted = [...payload.items].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
-      const rows = sorted.map((it) => ({
+      // Preserva a ordem original do extrato (não reordena por data)
+      const rows = payload.items.map((it) => ({
+
         month_id: payload.month_id,
         doc_number: next++,
         entry_date: it.entry_date,
