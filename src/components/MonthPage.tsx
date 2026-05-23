@@ -205,14 +205,14 @@ export function MonthPage({ reference }: { reference: string }) {
         <table className="official-table">
           <thead>
             <tr>
-              <th className="w-16">N.º Doc.</th>
-              <th className="w-28">Data</th>
-              <th>Descrição do Documento</th>
-              <th className="w-48">Classificação</th>
-              <th className="w-32">Recebimentos<br/>(Créditos)</th>
-              <th className="w-32">Desembolsos<br/>(Débitos)</th>
-              <th className="w-32">Saldo</th>
-              <th className="w-20">Ações</th>
+              <th className="w-12">N.º Doc.</th>
+              <th className="w-24">Data</th>
+              <th className="min-w-[420px]">Descrição do Documento</th>
+              <th className="w-44">Classificação</th>
+              <th className="w-28">Recebimentos<br/>(Créditos)</th>
+              <th className="w-28">Desembolsos<br/>(Débitos)</th>
+              <th className="w-28">Saldo</th>
+              <th className="w-16">Ações</th>
             </tr>
           </thead>
           <tbody>

@@ -33,7 +33,9 @@ export type Classification =
   | "reparos_domesticos"
   | "rendimento"
   | "salario"
+  | "saque"
   | "saude"
+  | "servico_cuidador"
   | "supermercado"
   | "telefone"
   | "transferencias"
@@ -75,7 +77,9 @@ export const CLASSIFICATIONS: { value: Classification; label: string }[] = [
   { value: "reparos_domesticos", label: "Reparos domésticos" },
   { value: "rendimento", label: "Rendimento" },
   { value: "salario", label: "Salário" },
+  { value: "saque", label: "Saque" },
   { value: "saude", label: "Saúde" },
+  { value: "servico_cuidador", label: "Serviço de cuidador" },
   { value: "supermercado", label: "Supermercado" },
   { value: "telefone", label: "Telefone" },
   { value: "transferencias", label: "Transferências" },
