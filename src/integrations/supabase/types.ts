@@ -181,6 +181,13 @@ export type Database = {
         | "irrf"
         | "despesas_animais"
         | "despesa_fazenda"
+        | "servico_cuidador"
+        | "despesas_medicas"
+        | "aluguel"
+        | "despesas_bancarias"
+        | "manutencao_residencial"
+        | "reparos_domesticos"
+        | "lazer_convivencia_social"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -345,6 +352,13 @@ export const Constants = {
         "irrf",
         "despesas_animais",
         "despesa_fazenda",
+        "servico_cuidador",
+        "despesas_medicas",
+        "aluguel",
+        "despesas_bancarias",
+        "manutencao_residencial",
+        "reparos_domesticos",
+        "lazer_convivencia_social",
       ],
     },
   },
