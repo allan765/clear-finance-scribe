@@ -29,9 +29,9 @@ const CLASSIFICATIONS = [
   "e_social","educacao","energia","equipamento_acessibilidade","farmacia",
   "faxina","guia_simples_nacional","internet","irrf","iptu","lazer",
   "lazer_convivencia_social","manutencao_residencial","outros","pix_recebido",
-  "reembolso","reparos_domesticos","rendimento","salario","saude",
-  "supermercado","telefone","transferencias","transporte","vestuario",
-  "nao_classificado",
+  "reembolso","reparos_domesticos","rendimento","salario","saque","saude",
+  "servico_cuidador","supermercado","telefone","transferencias","transporte",
+  "vestuario","nao_classificado",
 ];
 
 export const parseStatement = createServerFn({ method: "POST" })
