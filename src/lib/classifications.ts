@@ -1,78 +1,86 @@
 export type Classification =
-  | "salario"
-  | "rendimento"
-  | "aposentadoria"
-  | "reembolso"
-  | "pix_recebido"
-  | "supermercado"
   | "agua_esgoto"
-  | "energia"
-  | "internet"
-  | "telefone"
-  | "combustivel"
-  | "farmacia"
-  | "condominio"
-  | "cartao_credito"
-  | "aplicacao_poupanca"
-  | "transferencias"
-  | "saque"
-  | "saude"
-  | "educacao"
-  | "lazer"
-  | "vestuario"
   | "alimentacao"
-  | "transporte"
-  | "impostos"
-  | "darf_unificado"
-  | "guia_simples_nacional"
-  | "iptu"
+  | "aluguel"
+  | "aposentadoria"
+  | "aplicacao_poupanca"
+  | "cartao_credito"
   | "cartorio"
-  | "faxina"
-  | "equipamento_acessibilidade"
-  | "e_social"
-  | "irrf"
-  | "despesas_animais"
+  | "combustivel"
+  | "condominio"
+  | "darf_unificado"
   | "despesa_fazenda"
+  | "despesas_animais"
+  | "despesas_bancarias"
+  | "despesas_medicas"
+  | "e_social"
+  | "educacao"
+  | "energia"
+  | "equipamento_acessibilidade"
+  | "farmacia"
+  | "faxina"
+  | "guia_simples_nacional"
+  | "internet"
+  | "irrf"
+  | "iptu"
+  | "lazer"
+  | "lazer_convivencia_social"
+  | "manutencao_residencial"
+  | "nao_classificado"
   | "outros"
-  | "nao_classificado";
+  | "pix_recebido"
+  | "reembolso"
+  | "reparos_domesticos"
+  | "rendimento"
+  | "salario"
+  | "saude"
+  | "supermercado"
+  | "telefone"
+  | "transferencias"
+  | "transporte"
+  | "vestuario";
 
 export const CLASSIFICATIONS: { value: Classification; label: string }[] = [
-  { value: "salario", label: "Salário" },
-  { value: "rendimento", label: "Rendimento" },
-  { value: "aposentadoria", label: "Aposentadoria" },
-  { value: "reembolso", label: "Reembolso" },
-  { value: "pix_recebido", label: "Pix recebido" },
-  { value: "supermercado", label: "Supermercado" },
   { value: "agua_esgoto", label: "Água e esgoto" },
-  { value: "energia", label: "Energia" },
-  { value: "internet", label: "Internet" },
-  { value: "telefone", label: "Telefone" },
-  { value: "combustivel", label: "Combustível" },
-  { value: "farmacia", label: "Farmácia" },
-  { value: "condominio", label: "Condomínio" },
-  { value: "cartao_credito", label: "Cartão de crédito" },
-  { value: "aplicacao_poupanca", label: "Aplicação poupança" },
-  { value: "transferencias", label: "Transferências" },
-  { value: "saque", label: "Saque" },
-  { value: "saude", label: "Saúde" },
-  { value: "educacao", label: "Educação" },
-  { value: "lazer", label: "Lazer" },
-  { value: "vestuario", label: "Vestuário" },
   { value: "alimentacao", label: "Alimentação" },
-  { value: "transporte", label: "Transporte" },
-  { value: "impostos", label: "Impostos" },
-  { value: "darf_unificado", label: "DARF Unificado" },
-  { value: "guia_simples_nacional", label: "Guia do Simples Nacional" },
-  { value: "iptu", label: "Iptu" },
+  { value: "aluguel", label: "Aluguel" },
+  { value: "aposentadoria", label: "Aposentadoria" },
+  { value: "aplicacao_poupanca", label: "Aplicação poupança" },
+  { value: "cartao_credito", label: "Cartão de crédito" },
   { value: "cartorio", label: "Cartório" },
-  { value: "faxina", label: "Faxina" },
-  { value: "equipamento_acessibilidade", label: "Equipamento de acessibilidade" },
-  { value: "e_social", label: "E-Social" },
-  { value: "irrf", label: "IRRF" },
-  { value: "despesas_animais", label: "Despesas com animais" },
+  { value: "combustivel", label: "Combustível" },
+  { value: "condominio", label: "Condomínio" },
+  { value: "darf_unificado", label: "DARF Unificado" },
   { value: "despesa_fazenda", label: "Despesa com a fazenda" },
-  { value: "outros", label: "Outros" },
+  { value: "despesas_animais", label: "Despesas com animais" },
+  { value: "despesas_bancarias", label: "Despesas bancárias" },
+  { value: "despesas_medicas", label: "Despesas médicas" },
+  { value: "e_social", label: "E-Social" },
+  { value: "educacao", label: "Educação" },
+  { value: "energia", label: "Energia" },
+  { value: "equipamento_acessibilidade", label: "Equipamento de acessibilidade" },
+  { value: "farmacia", label: "Farmácia" },
+  { value: "faxina", label: "Faxina" },
+  { value: "guia_simples_nacional", label: "Guia do Simples Nacional" },
+  { value: "internet", label: "Internet" },
+  { value: "irrf", label: "IRRF" },
+  { value: "iptu", label: "Iptu" },
+  { value: "lazer", label: "Lazer" },
+  { value: "lazer_convivencia_social", label: "Lazer e convivência social" },
+  { value: "manutencao_residencial", label: "Manutenção residencial" },
   { value: "nao_classificado", label: "— Não classificado —" },
+  { value: "outros", label: "Outros" },
+  { value: "pix_recebido", label: "Pix recebido" },
+  { value: "reembolso", label: "Reembolso" },
+  { value: "reparos_domesticos", label: "Reparos domésticos" },
+  { value: "rendimento", label: "Rendimento" },
+  { value: "salario", label: "Salário" },
+  { value: "saude", label: "Saúde" },
+  { value: "supermercado", label: "Supermercado" },
+  { value: "telefone", label: "Telefone" },
+  { value: "transferencias", label: "Transferências" },
+  { value: "transporte", label: "Transporte" },
+  { value: "vestuario", label: "Vestuário" },
 ];
 
 export const labelOf = (c: Classification) =>
