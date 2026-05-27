@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import * as React from "react";
 import {
-  useMonth, useEntries, useMonths, useSettings,
+  useMonth, useEntries, useMonths, useSettings, useAllEntries,
   useCreateEntry, useUpdateEntry, useDeleteEntry, useToggleMonthClosed, useUpdateMonthNotes,
   useBulkCreateEntries,
   computeRunningBalances,
@@ -29,6 +29,7 @@ export function MonthPage({ reference }: { reference: string }) {
   const { data: month, isLoading: mLoading } = useMonth(reference);
   const { data: entries = [] } = useEntries(month?.id);
   const { data: allMonths = [] } = useMonths();
+  const { data: allEntriesData = [] } = useAllEntries();
   const { data: settings } = useSettings();
 
   const createEntry = useCreateEntry();
@@ -44,14 +45,19 @@ export function MonthPage({ reference }: { reference: string }) {
   const [classFilter, setClassFilter] = useState<Classification | "all">("all");
   const [notesDraft, setNotesDraft] = useState<string | null>(null);
 
-  // Saldo de abertura = inicial das settings + soma dos meses anteriores
+  // Saldo de abertura = saldo inicial das configurações + soma de todos os meses ANTERIORES
   const opening = useMemo(() => {
     if (!settings || !month) return 0;
-    // For simplicity (and correctness): fetch is per-month so we need all entries across earlier months.
-    // We'll lazy compute by reading from cache via a quick aggregate: pass through 0 if not loaded.
-    // (Implementação aprimorada: usar useAllEntries.)
-    return Number(settings.initial_balance);
-  }, [settings, month]);
+    const initialBalance = Number(settings.initial_balance);
+    // Pega todos os meses anteriores ao mês atual (em ordem)
+    const previousMonths = allMonths.filter(m => m.reference < month.reference);
+    const previousMonthIds = new Set(previousMonths.map(m => m.id));
+    // Soma todos os lançamentos desses meses anteriores
+    const previousTotal = allEntriesData
+      .filter(e => previousMonthIds.has(e.month_id))
+      .reduce((sum, e) => sum + Number(e.credit) - Number(e.debit), 0);
+    return initialBalance + previousTotal;
+  }, [settings, month, allMonths, allEntriesData]);
 
   const { withBalance, totalC, totalD, finalBalance } = useMemo(() => {
     const wb = computeRunningBalances(entries, opening);
