@@ -22,17 +22,35 @@ const InputSchema = z.object({
   filename: z.string().optional(),
 });
 
+
 const CLASSIFICATIONS = [
-  "agua_esgoto","alimentacao","aluguel","aposentadoria","aplicacao_poupanca",
-  "cartao_credito","cartorio","combustivel","condominio","darf_unificado",
-  "despesa_fazenda","despesas_animais","despesas_bancarias","despesas_medicas",
-  "e_social","educacao","energia","equipamento_acessibilidade","farmacia",
-  "faxina","grafica","guia_simples_nacional","internet","irrf","iptu","lazer",
-  "lazer_convivencia_social","manutencao_residencial","outros","pix_recebido",
-  "reembolso","reparos_domesticos","rendimento","salario","saque","saude",
-  "servico_cuidador","supermercado","telefone","transferencias","transporte",
-  "utilidades_casa","vestuario","nao_classificado",
+  // Receitas
+  "aposentadoria","pensao","beneficio_assistencial","salario","rendimento",
+  "aplicacao_poupanca","venda_bens","restituicao","reembolso","pix_recebido","outros_creditos","outros",
+  // Moradia / Utilidades
+  "agua_esgoto","energia","gas","internet","telefone","condominio","aluguel","utilidades_casa","iptu",
+  // Saúde
+  "despesas_medicas","farmacia","saude","equipamento_acessibilidade","servico_cuidador",
+  // Manutenção
+  "manutencao_residencial","manutencao_maquinas","manutencao_veiculo","despesa_fazenda",
+  // Pessoal
+  "cabeleireiro","higiene_pessoal","vestuario",
+  // Alimentação
+  "alimentacao","supermercado",
+  // Transporte
+  "combustivel","transporte","saque",
+  // Impostos
+  "darf_unificado","irrf","guia_simples_nacional","e_social","cartorio",
+  // Bancário
+  "despesas_bancarias","cartao_credito","transferencias",
+  // Lazer / Educação
+  "lazer","educacao",
+  // Outros / Serviços
+  "faxina","grafica","despesas_animais",
+  // Não classificado
+  "nao_classificado",
 ];
+
 
 export const parseStatement = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
