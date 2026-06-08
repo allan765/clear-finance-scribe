@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
+const MAX_TEXT_CHARS = 200_000;          // ~200 KB de texto
+const MAX_IMAGE_DATA_URL_CHARS = 8_000_000; // ~6 MB binário por imagem
+const MAX_IMAGES = 12;
+
 const ParsedTxnSchema = z.object({
   date: z.string().describe("YYYY-MM-DD"),
   description: z.string(),
@@ -13,13 +17,16 @@ const ParsedTxnSchema = z.object({
 const InputSchema = z.object({
   kind: z.enum(["bank", "expense"]),
   monthRef: z.string().regex(/^\d{4}-\d{2}$/),
-  // Conteúdo textual (CSV/OFX/TXT/PDF com texto extraído)
-  text: z.string().optional(),
-  // Imagem única (data URL)
-  imageDataUrl: z.string().optional(),
-  // Múltiplas imagens (ex.: páginas de PDF escaneado)
-  imageDataUrls: z.array(z.string()).optional(),
-  filename: z.string().optional(),
+  text: z.string().max(MAX_TEXT_CHARS, "Texto muito grande").optional(),
+  imageDataUrl: z
+    .string()
+    .max(MAX_IMAGE_DATA_URL_CHARS, "Imagem muito grande")
+    .optional(),
+  imageDataUrls: z
+    .array(z.string().max(MAX_IMAGE_DATA_URL_CHARS, "Imagem muito grande"))
+    .max(MAX_IMAGES, `Máximo de ${MAX_IMAGES} imagens por requisição`)
+    .optional(),
+  filename: z.string().max(255).optional(),
 });
 
 
