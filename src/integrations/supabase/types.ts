@@ -188,18 +188,6 @@ export type Database = {
         | "manutencao_residencial"
         | "reparos_domesticos"
         | "lazer_convivencia_social"
-        | "pensao"
-        | "beneficio_assistencial"
-        | "outros_creditos"
-        | "venda_bens"
-        | "restituicao"
-        | "gas"
-        | "manutencao_maquinas"
-        | "manutencao_veiculo"
-        | "cabeleireiro"
-        | "higiene_pessoal"
-        | "grafica"
-        | "utilidades_casa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -371,18 +359,6 @@ export const Constants = {
         "manutencao_residencial",
         "reparos_domesticos",
         "lazer_convivencia_social",
-        "pensao",
-        "beneficio_assistencial",
-        "outros_creditos",
-        "venda_bens",
-        "restituicao",
-        "gas",
-        "manutencao_maquinas",
-        "manutencao_veiculo",
-        "cabeleireiro",
-        "higiene_pessoal",
-        "grafica",
-        "utilidades_casa",
       ],
     },
   },
