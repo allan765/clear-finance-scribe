@@ -99,6 +99,15 @@ export function MonthPage({ reference }: { reference: string }) {
 
   const handleImport = async (file: File, kind: "bank" | "expense") => {
     if (!month) return;
+
+    // Regra: despesa só entra na prestação se houver correspondência no extrato.
+    if (kind === "expense" && entries.length === 0) {
+      toast.error(
+        "Importe primeiro o EXTRATO BANCÁRIO do mês. Despesas só são aceitas com correspondência no extrato."
+      );
+      return;
+    }
+
     setImporting(kind);
     const tid = toast.loading(`Interpretando ${kind === "bank" ? "extrato" : "despesas"} com IA...`);
     try {
@@ -123,19 +132,79 @@ export function MonthPage({ reference }: { reference: string }) {
         toast.error("Nenhum lançamento encontrado para este mês.", { id: tid });
         return;
       }
+
+      let itemsToInsert = result.transactions.map((t) => ({
+        entry_date: t.date,
+        description: t.description,
+        classification: (t.classification as Classification) ?? "nao_classificado",
+        credit: kind === "expense" ? 0 : Number(t.credit) || 0,
+        debit:
+          kind === "expense"
+            ? Number(t.debit) || Number(t.credit) || 0
+            : Number(t.debit) || 0,
+      }));
+
+      let discarded = 0;
+
+      if (kind === "expense") {
+        // Conferência: para cada despesa, achar um débito do extrato com mesmo valor
+        // e data próxima (±3 dias). Cada lançamento do extrato só pode casar 1 vez.
+        const bankDebits = entries
+          .filter((e) => Number(e.debit) > 0)
+          .map((e) => ({
+            id: e.id,
+            date: e.entry_date,
+            value: Math.round(Number(e.debit) * 100),
+            used: false,
+          }));
+
+        const matched: typeof itemsToInsert = [];
+        for (const item of itemsToInsert) {
+          const cents = Math.round((item.debit || 0) * 100);
+          if (cents <= 0) {
+            discarded++;
+            continue;
+          }
+          const itemTime = new Date(item.entry_date).getTime();
+          const idx = bankDebits.findIndex((b) => {
+            if (b.used || b.value !== cents) return false;
+            const diff = Math.abs(new Date(b.date).getTime() - itemTime);
+            return diff <= 3 * 24 * 60 * 60 * 1000;
+          });
+          if (idx === -1) {
+            discarded++;
+            continue;
+          }
+          bankDebits[idx].used = true;
+          matched.push(item);
+        }
+        itemsToInsert = matched;
+
+        if (itemsToInsert.length === 0) {
+          toast.error(
+            `Nenhuma despesa bateu com o extrato (${discarded} descartada(s)). Confira valores e datas.`,
+            { id: tid }
+          );
+          return;
+        }
+      }
+
       const inserted = await bulkCreate.mutateAsync({
         month_id: month.id,
-        items: result.transactions.map((t) => ({
-          entry_date: t.date,
-          description: t.description,
-          classification: (t.classification as Classification) ?? "nao_classificado",
-          credit: kind === "expense" ? 0 : Number(t.credit) || 0,
-          debit: kind === "expense"
-            ? (Number(t.debit) || Number(t.credit) || 0)
-            : Number(t.debit) || 0,
-        })),
+        items: itemsToInsert,
       });
-      toast.success(`${inserted} lançamento(s) importado(s). Revise os marcados como "Não classificado".`, { id: tid });
+
+      if (kind === "expense" && discarded > 0) {
+        toast.success(
+          `${inserted} despesa(s) conferida(s) e importada(s). ${discarded} descartada(s) por não terem correspondência no extrato.`,
+          { id: tid }
+        );
+      } else {
+        toast.success(
+          `${inserted} lançamento(s) importado(s). Revise os marcados como "Não classificado".`,
+          { id: tid }
+        );
+      }
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : "Falha ao importar", { id: tid });
