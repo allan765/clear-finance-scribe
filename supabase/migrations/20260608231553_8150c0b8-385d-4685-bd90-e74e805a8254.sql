@@ -1,0 +1,12 @@
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'beneficio_assistencial';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'pensao';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'venda_bens';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'restituicao';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'outros_creditos';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'gas';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'utilidades_casa';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'manutencao_maquinas';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'manutencao_veiculo';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'cabeleireiro';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'higiene_pessoal';
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'grafica';
