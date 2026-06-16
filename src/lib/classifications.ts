@@ -108,6 +108,8 @@ export type Classification =
   | "manutencao_residencial"
   | "manutencao_maquinas"
   | "manutencao_veiculo"
+  | "despesas_manutencao_veiculo"
+  | "estacionamento"
   | "despesa_fazenda"
   // Pessoal / Higiene
   | "cabeleireiro"
@@ -179,6 +181,8 @@ export const CLASSIFICATIONS: { value: Classification; label: string; group?: st
   { value: "manutencao_residencial",label: "Reparos e manutenção",             group: "Manutenção" },
   { value: "manutencao_maquinas",   label: "Manutenção de máquinas",           group: "Manutenção" },
   { value: "manutencao_veiculo",    label: "Manutenção de veículo",            group: "Manutenção" },
+  { value: "despesas_manutencao_veiculo", label: "Despesas com manutenção de veículo", group: "Manutenção" },
+  { value: "estacionamento",        label: "Tarifas de estacionamento",        group: "Transporte" },
   { value: "despesa_fazenda",       label: "Cercas e manutenção geral/fazenda", group: "Manutenção" },
 
   // ── PESSOAL / HIGIENE ─────────────────────────────────────

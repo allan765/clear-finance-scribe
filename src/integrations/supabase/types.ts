@@ -200,6 +200,8 @@ export type Database = {
         | "cabeleireiro"
         | "higiene_pessoal"
         | "grafica"
+        | "despesas_manutencao_veiculo"
+        | "estacionamento"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -383,6 +385,8 @@ export const Constants = {
         "cabeleireiro",
         "higiene_pessoal",
         "grafica",
+        "despesas_manutencao_veiculo",
+        "estacionamento",
       ],
     },
   },
