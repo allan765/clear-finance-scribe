@@ -152,6 +152,7 @@ export const CLASSIFICATIONS: { value: Classification; label: string; group?: st
   { value: "pensao",                label: "Pensão",                           group: "Receitas" },
   { value: "beneficio_assistencial",label: "Benefício assistencial",           group: "Receitas" },
   { value: "salario",               label: "Salário",                          group: "Receitas" },
+  { value: "salario_funcionario",   label: "Salário de funcionário",           group: "Outros" },
   { value: "rendimento",            label: "Rendimentos bancários",            group: "Receitas" },
   { value: "aplicacao_poupanca",    label: "Aplicações financeiras",           group: "Receitas" },
   { value: "venda_bens",            label: "Venda de bens",                    group: "Receitas" },
