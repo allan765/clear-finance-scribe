@@ -182,6 +182,7 @@ export const CLASSIFICATIONS: { value: Classification; label: string; group?: st
 
   // ── MANUTENÇÃO E REPAROS ──────────────────────────────────
   { value: "manutencao_residencial",label: "Reparos e manutenção",             group: "Manutenção" },
+  { value: "material_reforma",      label: "Material de reforma",              group: "Manutenção" },
   { value: "manutencao_maquinas",   label: "Manutenção de máquinas",           group: "Manutenção" },
   { value: "manutencao_veiculo",    label: "Manutenção de veículo",            group: "Manutenção" },
   { value: "despesas_manutencao_veiculo", label: "Despesas com manutenção de veículo", group: "Manutenção" },
