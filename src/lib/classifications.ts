@@ -107,6 +107,7 @@ export type Classification =
   | "servico_cuidador"
   // Manutenção
   | "manutencao_residencial"
+  | "material_reforma"
   | "manutencao_maquinas"
   | "manutencao_veiculo"
   | "despesas_manutencao_veiculo"
