@@ -80,6 +80,7 @@ export type Classification =
   | "pensao"
   | "beneficio_assistencial"
   | "salario"
+  | "salario_funcionario"
   | "rendimento"
   | "aplicacao_poupanca"
   | "venda_bens"
