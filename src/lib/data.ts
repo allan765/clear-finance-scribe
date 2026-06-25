@@ -243,8 +243,8 @@ export function useMoveEntry() {
 export function useRestoreBackup() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Parameters<typeof restoreBackupFn>[0]["data"]) => {
-      return restoreBackupFn({ data: payload });
+    mutationFn: async (payload: { months: any[]; entries: any[] }) => {
+      return restoreBackupFn({ data: payload as any });
     },
     onSuccess: () => {
       qc.invalidateQueries();
