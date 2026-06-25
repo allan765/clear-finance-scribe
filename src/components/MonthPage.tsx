@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
-import { Lock, Unlock, Plus, Trash2, FileDown, Paperclip, Search, X, ExternalLink, Upload, Loader2 } from "lucide-react";
+import { Lock, Unlock, Plus, Trash2, FileDown, Paperclip, Search, X, ExternalLink, Upload, Loader2, FileText } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
