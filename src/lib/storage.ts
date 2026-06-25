@@ -1,4 +1,9 @@
-import { uploadReceiptFn, deleteReceiptFn } from "./db.functions";
+import {
+  uploadReceiptFn,
+  deleteReceiptFn,
+  uploadMonthReceiptFn,
+  deleteMonthReceiptFn,
+} from "./db.functions";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
