@@ -86,6 +86,10 @@ export function Dashboard() {
         </div>
       )}
 
+      <GlobalSearch />
+
+
+
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card border rounded p-4">
           <h2 className="font-serif font-semibold mb-3">Receitas vs Despesas por mês</h2>
