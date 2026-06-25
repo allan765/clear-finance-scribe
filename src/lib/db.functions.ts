@@ -67,7 +67,7 @@ export const createEntryFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const doc = await nextDocNumber(supabaseAdmin, data.month_id);
-    const { error } = await supabaseAdmin.from("entries").insert({ ...data, doc_number: doc });
+    const { error } = await supabaseAdmin.from("entries").insert({ ...data, doc_number: doc } as any);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -77,7 +77,7 @@ export const updateEntryFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...patch } = data;
-    const { error } = await supabaseAdmin.from("entries").update(patch).eq("id", id);
+    const { error } = await supabaseAdmin.from("entries").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -138,7 +138,7 @@ export const bulkCreateEntriesFn = createServerFn({ method: "POST" })
       credit: it.credit,
       debit: it.debit,
     }));
-    const { error } = await supabaseAdmin.from("entries").insert(rows);
+    const { error } = await supabaseAdmin.from("entries").insert(rows as any);
     if (error) throw new Error(error.message);
     return { count: rows.length };
   });
@@ -157,7 +157,7 @@ export const updateMonthFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...patch } = data;
-    const { error } = await supabaseAdmin.from("months").update(patch).eq("id", id);
+    const { error } = await supabaseAdmin.from("months").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -178,7 +178,7 @@ export const updateSettingsFn = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { id, ...patch } = data;
-    const { error } = await supabaseAdmin.from("settings").update(patch).eq("id", id);
+    const { error } = await supabaseAdmin.from("settings").update(patch as any).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
