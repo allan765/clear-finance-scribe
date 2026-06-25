@@ -9,6 +9,8 @@ import {
   renumberDocsFn,
   updateMonthFn,
   updateSettingsFn,
+  moveEntryFn,
+  restoreBackupFn,
 } from "./db.functions";
 
 export type Month = {
@@ -19,6 +21,8 @@ export type Month = {
   closed: boolean;
   closed_at: string | null;
   notes: string | null;
+  receipt_path?: string | null;
+  receipt_url?: string | null;
 };
 
 export type Entry = {
