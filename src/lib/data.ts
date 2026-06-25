@@ -227,6 +227,31 @@ export function useBulkCreateEntries() {
   });
 }
 
+export function useMoveEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, target_month_id }: { id: string; target_month_id: string }) => {
+      await moveEntryFn({ data: { id, target_month_id } });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
+export function useRestoreBackup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: Parameters<typeof restoreBackupFn>[0]["data"]) => {
+      return restoreBackupFn({ data: payload });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
+    },
+  });
+}
+
 export function useToggleMonthClosed() {
   const qc = useQueryClient();
   return useMutation({
