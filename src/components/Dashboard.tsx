@@ -59,11 +59,14 @@ export function Dashboard() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Resumo geral da prestação de contas — {settings ? `${monthLabel(settings.period_start)} a ${monthLabel(settings.period_end)}` : ""}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Resumo geral da prestação de contas — {settings ? `${monthLabel(settings.period_start)} a ${monthLabel(settings.period_end)}` : ""}
+          </p>
+        </div>
+        <BackupButtons />
       </div>
 
       {/* KPIs */}
