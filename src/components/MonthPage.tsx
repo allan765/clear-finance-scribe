@@ -643,3 +643,118 @@ function BRNumberInput({ value, disabled, onChange, onCommit }: {
   );
 }
 
+
+function MonthReceiptControls({
+  month,
+  entries,
+  opening,
+  settings,
+}: {
+  month: { id: string; reference: string; year: number; month: number; closed: boolean; closed_at: string | null; notes: string | null; receipt_url?: string | null; receipt_path?: string | null };
+  entries: Entry[];
+  opening: number;
+  settings: ReturnType<typeof useSettings>["data"];
+}) {
+  const [busy, setBusy] = useState<null | "upload" | "download" | "remove">(null);
+  const hasReceipt = !!month.receipt_url;
+
+  const handlePick = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/pdf";
+    input.onchange = async () => {
+      const f = input.files?.[0];
+      if (!f) return;
+      if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf")) {
+        toast.error("Envie um arquivo PDF.");
+        return;
+      }
+      setBusy("upload");
+      const tid = toast.loading("Enviando PDF de comprovantes...");
+      try {
+        await uploadMonthReceipt(f, month.id);
+        toast.success("PDF de comprovantes anexado ao mês.", { id: tid });
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Falha ao enviar PDF", { id: tid });
+      } finally {
+        setBusy(null);
+      }
+    };
+    input.click();
+  };
+
+  const handleDownload = async () => {
+    if (!settings) return;
+    setBusy("download");
+    const tid = toast.loading("Gerando capa + comprovantes...");
+    try {
+      await downloadMonthCoverWithReceipts(
+        { month: month as any, entries, opening },
+        settings,
+        month.receipt_url ?? null,
+      );
+      toast.success("Download iniciado.", { id: tid });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar PDF", { id: tid });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!confirm("Remover o PDF de comprovantes anexado a este mês?")) return;
+    setBusy("remove");
+    try {
+      await deleteMonthReceipt(month.id);
+      toast.success("PDF de comprovantes removido.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao remover");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" disabled={!!busy}>
+          {busy ? (
+            <><Loader2 className="size-4 mr-1 animate-spin" /> Processando...</>
+          ) : (
+            <><FileText className="size-4 mr-1" /> Comprovantes do mês{hasReceipt ? " ✓" : ""}</>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuItem onClick={handlePick} disabled={month.closed}>
+          <div>
+            <div className="font-medium">{hasReceipt ? "Substituir PDF anexado" : "Anexar PDF de comprovantes"}</div>
+            <div className="text-xs text-muted-foreground">Notas fiscais e recibos digitalizados (até 25 MB)</div>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDownload}>
+          <div>
+            <div className="font-medium">Baixar capa + comprovantes</div>
+            <div className="text-xs text-muted-foreground">Capa gerada + PDF anexado, mesclados</div>
+          </div>
+        </DropdownMenuItem>
+        {hasReceipt && month.receipt_url && (
+          <DropdownMenuItem onClick={() => window.open(month.receipt_url!, "_blank")}>
+            <div>
+              <div className="font-medium">Abrir só o PDF anexado</div>
+              <div className="text-xs text-muted-foreground">Em nova aba</div>
+            </div>
+          </DropdownMenuItem>
+        )}
+        {hasReceipt && !month.closed && (
+          <DropdownMenuItem onClick={handleRemove}>
+            <div>
+              <div className="font-medium text-destructive">Remover PDF anexado</div>
+              <div className="text-xs text-muted-foreground">A capa continua disponível</div>
+            </div>
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
