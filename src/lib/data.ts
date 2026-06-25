@@ -9,6 +9,8 @@ import {
   renumberDocsFn,
   updateMonthFn,
   updateSettingsFn,
+  moveEntryFn,
+  restoreBackupFn,
 } from "./db.functions";
 
 export type Month = {
@@ -19,6 +21,8 @@ export type Month = {
   closed: boolean;
   closed_at: string | null;
   notes: string | null;
+  receipt_path?: string | null;
+  receipt_url?: string | null;
 };
 
 export type Entry = {
@@ -219,6 +223,31 @@ export function useBulkCreateEntries() {
     onSuccess: (_n, vars) => {
       qc.invalidateQueries({ queryKey: ["entries", vars.month_id] });
       qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
+export function useMoveEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, target_month_id }: { id: string; target_month_id: string }) => {
+      await moveEntryFn({ data: { id, target_month_id } });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["entries"] });
+      qc.invalidateQueries({ queryKey: ["entries-all"] });
+    },
+  });
+}
+
+export function useRestoreBackup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { months: any[]; entries: any[] }) => {
+      return restoreBackupFn({ data: payload as any });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries();
     },
   });
 }

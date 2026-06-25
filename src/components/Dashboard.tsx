@@ -4,6 +4,8 @@ import { useAllEntries, useMonths, useSettings } from "@/lib/data";
 import { formatBRL, monthLabel, monthShort } from "@/lib/format";
 import { labelOf } from "@/lib/classifications";
 import { TrendingUp, TrendingDown, Wallet, AlertCircle, Lock, FilePlus } from "lucide-react";
+import { GlobalSearch } from "./GlobalSearch";
+import { BackupButtons } from "./BackupButtons";
 
 export function Dashboard() {
   const { data: months = [] } = useMonths();
@@ -57,11 +59,14 @@ export function Dashboard() {
 
   return (
     <div className="p-4 md:p-8 space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Resumo geral da prestação de contas — {settings ? `${monthLabel(settings.period_start)} a ${monthLabel(settings.period_end)}` : ""}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-serif text-2xl md:text-3xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Resumo geral da prestação de contas — {settings ? `${monthLabel(settings.period_start)} a ${monthLabel(settings.period_end)}` : ""}
+          </p>
+        </div>
+        <BackupButtons />
       </div>
 
       {/* KPIs */}
@@ -80,6 +85,10 @@ export function Dashboard() {
           </div>
         </div>
       )}
+
+      <GlobalSearch />
+
+
 
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-card border rounded p-4">

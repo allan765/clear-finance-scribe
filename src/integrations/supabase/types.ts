@@ -78,6 +78,8 @@ export type Database = {
           id: string
           month: number
           notes: string | null
+          receipt_path: string | null
+          receipt_url: string | null
           reference: string
           updated_at: string
           year: number
@@ -89,6 +91,8 @@ export type Database = {
           id?: string
           month: number
           notes?: string | null
+          receipt_path?: string | null
+          receipt_url?: string | null
           reference: string
           updated_at?: string
           year: number
@@ -100,6 +104,8 @@ export type Database = {
           id?: string
           month?: number
           notes?: string | null
+          receipt_path?: string | null
+          receipt_url?: string | null
           reference?: string
           updated_at?: string
           year?: number

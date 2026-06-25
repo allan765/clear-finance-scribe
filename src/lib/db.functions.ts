@@ -238,3 +238,184 @@ export const deleteReceiptFn = createServerFn({ method: "POST" })
       .eq("id", data.entryId);
     return { ok: true };
   });
+
+// ------- Move entry between months -------
+
+export const moveEntryFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        target_month_id: z.string().uuid(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur } = await supabaseAdmin
+      .from("entries")
+      .select("month_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (!cur) throw new Error("Lançamento não encontrado");
+    const sourceMonthId = cur.month_id as string;
+    if (sourceMonthId === data.target_month_id) return { ok: true };
+    const next = await nextDocNumber(supabaseAdmin, data.target_month_id);
+    const { error } = await supabaseAdmin
+      .from("entries")
+      .update({ month_id: data.target_month_id, doc_number: next } as any)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await renumberDocsAdmin(supabaseAdmin, sourceMonthId);
+    await renumberDocsAdmin(supabaseAdmin, data.target_month_id);
+    return { ok: true };
+  });
+
+// ------- Backup restore -------
+
+const BackupSchema = z.object({
+  months: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        reference: z.string(),
+        year: z.number().int(),
+        month: z.number().int(),
+        closed: z.boolean().optional(),
+        notes: z.string().nullable().optional(),
+      }),
+    )
+    .max(200),
+  entries: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        month_id: z.string().uuid(),
+        doc_number: z.number().int(),
+        entry_date: z.string(),
+        description: z.string(),
+        classification: z.string(),
+        credit: z.number(),
+        debit: z.number(),
+        notes: z.string().nullable().optional(),
+      }),
+    )
+    .max(10000),
+});
+
+export const restoreBackupFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => BackupSchema.parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let monthsUp = 0;
+    let entriesUp = 0;
+    for (const m of data.months) {
+      const { error } = await supabaseAdmin
+        .from("months")
+        .upsert(
+          {
+            id: m.id,
+            reference: m.reference,
+            year: m.year,
+            month: m.month,
+            closed: m.closed ?? false,
+            notes: m.notes ?? null,
+          } as any,
+          { onConflict: "id" },
+        );
+      if (!error) monthsUp++;
+    }
+    // upsert entries in chunks
+    const chunkSize = 200;
+    for (let i = 0; i < data.entries.length; i += chunkSize) {
+      const chunk = data.entries.slice(i, i + chunkSize).map((e) => ({
+        id: e.id,
+        month_id: e.month_id,
+        doc_number: e.doc_number,
+        entry_date: e.entry_date,
+        description: e.description,
+        classification: e.classification,
+        credit: e.credit,
+        debit: e.debit,
+        notes: e.notes ?? null,
+      }));
+      const { error } = await supabaseAdmin
+        .from("entries")
+        .upsert(chunk as any, { onConflict: "id" });
+      if (!error) entriesUp += chunk.length;
+    }
+    // count remaining "nao_classificado"
+    const { count: unclassified } = await supabaseAdmin
+      .from("entries")
+      .select("id", { count: "exact", head: true })
+      .eq("classification", "nao_classificado");
+    return { monthsUp, entriesUp, unclassified: unclassified ?? 0 };
+  });
+
+// ------- Month-level receipts PDF -------
+
+const MAX_MONTH_RECEIPT_BYTES = 25 * 1024 * 1024; // 25 MB
+
+export const uploadMonthReceiptFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        monthId: z.string().uuid(),
+        filename: z.string().max(255),
+        contentType: z.string().max(128),
+        base64: z.string().max(Math.ceil((MAX_MONTH_RECEIPT_BYTES * 4) / 3) + 256),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bytes = Buffer.from(data.base64, "base64");
+    if (bytes.byteLength > MAX_MONTH_RECEIPT_BYTES) {
+      throw new Error("Arquivo muito grande (máx 25 MB)");
+    }
+    // remove old file if any
+    const { data: cur } = await supabaseAdmin
+      .from("months")
+      .select("receipt_path")
+      .eq("id", data.monthId)
+      .maybeSingle();
+    const oldPath = (cur as any)?.receipt_path as string | null | undefined;
+    if (oldPath) {
+      await supabaseAdmin.storage.from("receipts").remove([oldPath]);
+    }
+    const safeName = data.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `month-receipts/${data.monthId}/${Date.now()}-${safeName}`;
+    const { error: upErr } = await supabaseAdmin.storage
+      .from("receipts")
+      .upload(path, bytes, { contentType: data.contentType, upsert: false });
+    if (upErr) throw new Error(upErr.message);
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("receipts")
+      .createSignedUrl(path, RECEIPT_URL_TTL_SECONDS);
+    if (signErr) throw new Error(signErr.message);
+    await supabaseAdmin
+      .from("months")
+      .update({ receipt_path: path, receipt_url: signed.signedUrl } as any)
+      .eq("id", data.monthId);
+    return { path, url: signed.signedUrl };
+  });
+
+export const deleteMonthReceiptFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z.object({ monthId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur } = await supabaseAdmin
+      .from("months")
+      .select("receipt_path")
+      .eq("id", data.monthId)
+      .maybeSingle();
+    const path = (cur as any)?.receipt_path as string | null | undefined;
+    if (path) await supabaseAdmin.storage.from("receipts").remove([path]);
+    await supabaseAdmin
+      .from("months")
+      .update({ receipt_path: null, receipt_url: null } as any)
+      .eq("id", data.monthId);
+    return { ok: true };
+  });

@@ -1,12 +1,40 @@
+import { useMemo } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { useMonths } from "@/lib/data";
+import { useMonths, useAllEntries } from "@/lib/data";
 import { monthShort, monthLabel } from "@/lib/format";
-import { FileText, Settings as SettingsIcon, LayoutDashboard, Lock, CircleAlert } from "lucide-react";
+import { FileText, Settings as SettingsIcon, LayoutDashboard, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function useUnclassifiedCounts() {
+  const { data: entries = [] } = useAllEntries();
+  return useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of entries) {
+      if (e.classification === "nao_classificado") {
+        m.set(e.month_id, (m.get(e.month_id) ?? 0) + 1);
+      }
+    }
+    return m;
+  }, [entries]);
+}
+
+function PendingBadge({ count }: { count: number }) {
+  if (!count) return null;
+  return (
+    <span
+      className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold text-slate-900 shrink-0"
+      style={{ backgroundColor: "#f5a623" }}
+      title={`${count} lançamento(s) sem classificação`}
+    >
+      {count}
+    </span>
+  );
+}
 
 export function AppSidebar() {
   const { data: months } = useMonths();
   const location = useLocation();
+  const counts = useUnclassifiedCounts();
 
   return (
     <aside className="hidden md:flex w-64 shrink-0 bg-sidebar text-sidebar-foreground flex-col border-r border-sidebar-border">
@@ -32,6 +60,7 @@ export function AppSidebar() {
         {months?.map((m) => {
           const path = `/mes/${m.reference}`;
           const active = location.pathname === path;
+          const pending = counts.get(m.id) ?? 0;
           return (
             <Link
               key={m.id}
@@ -44,12 +73,15 @@ export function AppSidebar() {
                   : "hover:bg-sidebar-accent text-sidebar-foreground/90"
               )}
             >
-              <span className="truncate">{monthLabel(m.reference)}</span>
-              {m.closed ? (
-                <Lock className="size-3.5 opacity-70" />
-              ) : (
-                <span className="text-[10px] opacity-50">{monthShort(m.reference)}</span>
-              )}
+              <span className="truncate flex-1">{monthLabel(m.reference)}</span>
+              <span className="flex items-center gap-1.5 shrink-0">
+                <PendingBadge count={pending} />
+                {m.closed ? (
+                  <Lock className="size-3.5 opacity-70" />
+                ) : (
+                  <span className="text-[10px] opacity-50">{monthShort(m.reference)}</span>
+                )}
+              </span>
             </Link>
           );
         })}
@@ -76,24 +108,27 @@ function SideLink({ to, icon, label, active }: { to: string; icon: React.ReactNo
 export function MobileMonthBar() {
   const { data: months } = useMonths();
   const location = useLocation();
+  const counts = useUnclassifiedCounts();
   return (
     <div className="md:hidden overflow-x-auto border-b bg-card">
       <div className="flex gap-1 px-2 py-2 min-w-max">
         {months?.map((m) => {
           const path = `/mes/${m.reference}`;
           const active = location.pathname === path;
+          const pending = counts.get(m.id) ?? 0;
           return (
             <Link
               key={m.id}
               to="/mes/$ref"
               params={{ ref: m.reference }}
               className={cn(
-                "px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap border",
+                "px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap border inline-flex items-center gap-1.5",
                 active ? "bg-primary text-primary-foreground border-primary" : "bg-background text-foreground border-border"
               )}
             >
               {monthShort(m.reference)}
-              {m.closed && <Lock className="inline-block size-3 ml-1 opacity-70" />}
+              <PendingBadge count={pending} />
+              {m.closed && <Lock className="inline-block size-3 opacity-70" />}
             </Link>
           );
         })}

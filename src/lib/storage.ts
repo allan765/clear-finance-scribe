@@ -1,4 +1,9 @@
-import { uploadReceiptFn, deleteReceiptFn } from "./db.functions";
+import {
+  uploadReceiptFn,
+  deleteReceiptFn,
+  uploadMonthReceiptFn,
+  deleteMonthReceiptFn,
+} from "./db.functions";
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -29,4 +34,21 @@ export async function uploadReceipt(file: File, entryId: string) {
 
 export async function deleteReceipt(path: string, entryId: string) {
   await deleteReceiptFn({ data: { entryId, path } });
+}
+
+export async function uploadMonthReceipt(file: File, monthId: string) {
+  const base64 = await fileToBase64(file);
+  const res = await uploadMonthReceiptFn({
+    data: {
+      monthId,
+      filename: file.name,
+      contentType: file.type || "application/pdf",
+      base64,
+    },
+  });
+  return { path: res.path, url: res.url };
+}
+
+export async function deleteMonthReceipt(monthId: string) {
+  await deleteMonthReceiptFn({ data: { monthId } });
 }
