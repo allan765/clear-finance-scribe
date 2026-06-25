@@ -4,6 +4,8 @@ import { useAllEntries, useMonths, useSettings } from "@/lib/data";
 import { formatBRL, monthLabel, monthShort } from "@/lib/format";
 import { labelOf } from "@/lib/classifications";
 import { TrendingUp, TrendingDown, Wallet, AlertCircle, Lock, FilePlus } from "lucide-react";
+import { GlobalSearch } from "./GlobalSearch";
+import { BackupButtons } from "./BackupButtons";
 
 export function Dashboard() {
   const { data: months = [] } = useMonths();
