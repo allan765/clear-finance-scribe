@@ -1,6 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Classification } from "./classifications";
+import {
+  createEntryFn,
+  updateEntryFn,
+  deleteEntryFn,
+  bulkCreateEntriesFn,
+  renumberDocsFn,
+  updateMonthFn,
+  updateSettingsFn,
+} from "./db.functions";
 
 export type Month = {
   id: string;
@@ -82,7 +91,6 @@ export function useEntries(monthId: string | undefined) {
   });
 }
 
-
 export function useAllEntries() {
   return useQuery({
     queryKey: ["entries-all"],
@@ -116,11 +124,7 @@ export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (patch: Partial<Settings> & { id: string }) => {
-      const { error } = await supabase
-        .from("settings")
-        .update(patch)
-        .eq("id", patch.id);
-      if (error) throw error;
+      await updateSettingsFn({ data: patch as any });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
   });
@@ -138,23 +142,17 @@ export function useCreateEntry() {
       debit?: number;
       notes?: string | null;
     }) => {
-      // Next doc number for that month
-      const { data: maxData } = await supabase
-        .from("entries")
-        .select("doc_number")
-        .eq("month_id", payload.month_id)
-        .order("doc_number", { ascending: false })
-        .limit(1);
-      const next = ((maxData?.[0]?.doc_number as number | undefined) ?? 0) + 1;
-      const { error } = await supabase.from("entries").insert({
-        ...payload,
-        doc_number: next,
-        description: payload.description ?? "",
-        classification: payload.classification ?? "nao_classificado",
-        credit: payload.credit ?? 0,
-        debit: payload.debit ?? 0,
+      await createEntryFn({
+        data: {
+          month_id: payload.month_id,
+          entry_date: payload.entry_date,
+          description: payload.description ?? "",
+          classification: payload.classification ?? "nao_classificado",
+          credit: payload.credit ?? 0,
+          debit: payload.debit ?? 0,
+          notes: payload.notes ?? null,
+        },
       });
-      if (error) throw error;
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["entries", vars.month_id] });
@@ -167,8 +165,7 @@ export function useUpdateEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (patch: Partial<Entry> & { id: string }) => {
-      const { error } = await supabase.from("entries").update(patch).eq("id", patch.id);
-      if (error) throw error;
+      await updateEntryFn({ data: patch as any });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
@@ -181,55 +178,20 @@ export function useDeleteEntry() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // Buscar o month_id antes de deletar para renumerar depois
-      const { data: target } = await supabase
-        .from("entries")
-        .select("month_id")
-        .eq("id", id)
-        .maybeSingle();
-      const { error } = await supabase.from("entries").delete().eq("id", id);
-      if (error) throw error;
-      if (target?.month_id) {
-        await renumberDocs(target.month_id as string);
-      }
+      await deleteEntryFn({ data: { id } });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
       qc.invalidateQueries({ queryKey: ["entries-all"] });
     },
   });
-}
-
-// Reorganiza os Nº Doc. de um mês para 1..N preservando a ordem atual (doc_number ASC).
-async function renumberDocs(monthId: string) {
-  const { data: rows, error } = await supabase
-    .from("entries")
-    .select("id, doc_number")
-    .eq("month_id", monthId)
-    .order("doc_number", { ascending: true });
-  if (error || !rows) return;
-  // 1ª passada: deslocar para um range alto para evitar colisão caso surja UNIQUE no futuro
-  const offset = 100000;
-  for (let i = 0; i < rows.length; i++) {
-    const desired = i + 1;
-    if (rows[i].doc_number !== desired) {
-      await supabase.from("entries").update({ doc_number: offset + desired }).eq("id", rows[i].id);
-    }
-  }
-  // 2ª passada: aplicar o número final
-  for (let i = 0; i < rows.length; i++) {
-    const desired = i + 1;
-    if (rows[i].doc_number !== desired) {
-      await supabase.from("entries").update({ doc_number: desired }).eq("id", rows[i].id);
-    }
-  }
 }
 
 export function useRenumberDocs() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (monthId: string) => {
-      await renumberDocs(monthId);
+      await renumberDocsFn({ data: { month_id: monthId } });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["entries"] });
@@ -237,7 +199,6 @@ export function useRenumberDocs() {
     },
   });
 }
-
 
 export function useBulkCreateEntries() {
   const qc = useQueryClient();
@@ -252,28 +213,8 @@ export function useBulkCreateEntries() {
         debit: number;
       }>;
     }) => {
-      if (payload.items.length === 0) return 0;
-      const { data: maxData } = await supabase
-        .from("entries")
-        .select("doc_number")
-        .eq("month_id", payload.month_id)
-        .order("doc_number", { ascending: false })
-        .limit(1);
-      let next = ((maxData?.[0]?.doc_number as number | undefined) ?? 0) + 1;
-      // Preserva a ordem original do extrato (não reordena por data)
-      const rows = payload.items.map((it) => ({
-
-        month_id: payload.month_id,
-        doc_number: next++,
-        entry_date: it.entry_date,
-        description: it.description,
-        classification: it.classification,
-        credit: it.credit,
-        debit: it.debit,
-      }));
-      const { error } = await supabase.from("entries").insert(rows);
-      if (error) throw error;
-      return rows.length;
+      const res = await bulkCreateEntriesFn({ data: payload as any });
+      return res.count;
     },
     onSuccess: (_n, vars) => {
       qc.invalidateQueries({ queryKey: ["entries", vars.month_id] });
@@ -286,11 +227,9 @@ export function useToggleMonthClosed() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, closed }: { id: string; closed: boolean }) => {
-      const { error } = await supabase
-        .from("months")
-        .update({ closed, closed_at: closed ? new Date().toISOString() : null })
-        .eq("id", id);
-      if (error) throw error;
+      await updateMonthFn({
+        data: { id, closed, closed_at: closed ? new Date().toISOString() : null },
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["months"] });
@@ -303,8 +242,7 @@ export function useUpdateMonthNotes() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, notes }: { id: string; notes: string }) => {
-      const { error } = await supabase.from("months").update({ notes }).eq("id", id);
-      if (error) throw error;
+      await updateMonthFn({ data: { id, notes } });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["month"] }),
   });

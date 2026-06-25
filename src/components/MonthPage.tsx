@@ -485,7 +485,7 @@ function ReceiptButton({ entry, disabled, uploading, setUploading, onUpdate }: {
         {!disabled && (
           <button
             onClick={async () => {
-              if (entry.receipt_path) await deleteReceipt(entry.receipt_path);
+              if (entry.receipt_path) await deleteReceipt(entry.receipt_path, entry.id);
               onUpdate({ receipt_url: null, receipt_path: null });
             }}
             className="p-1 text-muted-foreground hover:bg-muted rounded"
