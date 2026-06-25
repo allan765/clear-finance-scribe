@@ -236,6 +236,12 @@ export function MonthPage({ reference }: { reference: string }) {
           >
             <FileDown className="size-4 mr-1" /> PDF do mês
           </Button>
+          <MonthReceiptControls
+            month={month}
+            entries={entries}
+            opening={opening}
+            settings={settings}
+          />
           <Button
             variant={isClosed ? "default" : "secondary"}
             size="sm"
