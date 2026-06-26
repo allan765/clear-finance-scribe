@@ -38,15 +38,22 @@ export function ReportPage() {
       month: m,
       entries: allEntries.filter((e) => e.month_id === m.id),
       opening: i === 0 ? summary.opening : summary.rows[i - 1].balance,
+      receiptUrl: m.receipt_url ?? null,
     }));
 
-  const handlePDF = () => {
+  const handlePDF = async () => {
     if (!settings) return;
     if (summary.totalU > 0) {
       if (!confirm(`Existem ${summary.totalU} lançamento(s) sem classificação. Gerar o PDF mesmo assim?`)) return;
     }
-    exportFullPDF(buildMonthData(), settings);
-    toast.success("PDF gerado");
+    const tid = toast.loading("Gerando PDF consolidado (incluindo comprovantes)...");
+    try {
+      await exportFullPDF(buildMonthData(), settings);
+      toast.success("PDF gerado", { id: tid });
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao gerar PDF", { id: tid });
+    }
   };
 
   const handleExcel = () => {
