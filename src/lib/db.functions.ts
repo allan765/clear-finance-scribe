@@ -354,7 +354,72 @@ export const restoreBackupFn = createServerFn({ method: "POST" })
 
 // ------- Month-level receipts PDF -------
 
-const MAX_MONTH_RECEIPT_BYTES = 25 * 1024 * 1024; // 25 MB
+const MAX_MONTH_RECEIPT_BYTES = 50 * 1024 * 1024; // 50 MB
+
+export const createMonthReceiptUploadFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        monthId: z.string().uuid(),
+        filename: z.string().max(255),
+        contentType: z.string().max(128),
+        size: z.number().int().positive().max(MAX_MONTH_RECEIPT_BYTES),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const isPdf = data.contentType === "application/pdf" || data.filename.toLowerCase().endsWith(".pdf");
+    if (!isPdf) throw new Error("Envie um arquivo PDF.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const safeName = data.filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `month-receipts/${data.monthId}/${Date.now()}-${safeName}`;
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("receipts")
+      .createSignedUploadUrl(path);
+    if (error) throw new Error(error.message);
+    return { path, token: signed.token };
+  });
+
+export const finalizeMonthReceiptUploadFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        monthId: z.string().uuid(),
+        path: z.string().max(1024),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const expectedPrefix = `month-receipts/${data.monthId}/`;
+    if (!data.path.startsWith(expectedPrefix) || data.path.includes("..")) {
+      throw new Error("Caminho do arquivo inválido.");
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur } = await supabaseAdmin
+      .from("months")
+      .select("receipt_path")
+      .eq("id", data.monthId)
+      .maybeSingle();
+    const oldPath = (cur as any)?.receipt_path as string | null | undefined;
+
+    const { data: signed, error: signErr } = await supabaseAdmin.storage
+      .from("receipts")
+      .createSignedUrl(data.path, RECEIPT_URL_TTL_SECONDS);
+    if (signErr) throw new Error(signErr.message);
+
+    const { error: updateErr } = await supabaseAdmin
+      .from("months")
+      .update({ receipt_path: data.path, receipt_url: signed.signedUrl } as any)
+      .eq("id", data.monthId);
+    if (updateErr) throw new Error(updateErr.message);
+
+    if (oldPath && oldPath !== data.path) {
+      await supabaseAdmin.storage.from("receipts").remove([oldPath]);
+    }
+    return { path: data.path, url: signed.signedUrl };
+  });
 
 export const uploadMonthReceiptFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
@@ -371,7 +436,7 @@ export const uploadMonthReceiptFn = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const bytes = Buffer.from(data.base64, "base64");
     if (bytes.byteLength > MAX_MONTH_RECEIPT_BYTES) {
-      throw new Error("Arquivo muito grande (máx 25 MB)");
+      throw new Error("Arquivo muito grande (máx 50 MB)");
     }
     // remove old file if any
     const { data: cur } = await supabaseAdmin
