@@ -363,7 +363,7 @@ export const uploadMonthReceiptFn = createServerFn({ method: "POST" })
         monthId: z.string().uuid(),
         filename: z.string().max(255),
         contentType: z.string().max(128),
-        base64: z.string().max(Math.ceil((MAX_MONTH_RECEIPT_BYTES * 4) / 3) + 256),
+        base64: z.string().max(MAX_MONTH_RECEIPT_BYTES * 2),
       })
       .parse(d),
   )
