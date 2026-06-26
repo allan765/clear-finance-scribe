@@ -316,7 +316,7 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
       doc.addPage("a4", "portrait");
       doc.setFillColor(...BRAND);
       doc.rect(0, 0, w, h, "F");
-      doc.setFillColor(255);
+      doc.setFillColor(255, 255, 255);
       doc.rect(40, 40, w - 80, h - 80, "F");
 
       doc.setFillColor(...BRAND);
