@@ -729,7 +729,7 @@ function MonthReceiptControls({
         <DropdownMenuItem onClick={handlePick} disabled={month.closed}>
           <div>
             <div className="font-medium">{hasReceipt ? "Substituir PDF anexado" : "Anexar PDF de comprovantes"}</div>
-            <div className="text-xs text-muted-foreground">Notas fiscais e recibos digitalizados (até 25 MB)</div>
+            <div className="text-xs text-muted-foreground">Notas fiscais e recibos digitalizados (até 50 MB)</div>
           </div>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDownload}>
