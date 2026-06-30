@@ -12,7 +12,7 @@ import { parseStatement } from "@/lib/import.functions";
 import type { Classification } from "@/lib/classifications";
 import { CLASSIFICATIONS, labelOf } from "@/lib/classifications";
 import { formatBRL, formatNumber, monthLabel } from "@/lib/format";
-import { exportMonthPDF } from "@/lib/export";
+import { exportMonthPDF, exportSingleMonthFullPDF } from "@/lib/export";
 import { uploadReceipt, deleteReceipt, uploadMonthReceipt, deleteMonthReceipt } from "@/lib/storage";
 import { downloadMonthCoverWithReceipts } from "@/lib/month-receipt";
 import { Button } from "@/components/ui/button";
