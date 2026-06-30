@@ -12,7 +12,7 @@ import { parseStatement } from "@/lib/import.functions";
 import type { Classification } from "@/lib/classifications";
 import { CLASSIFICATIONS, labelOf } from "@/lib/classifications";
 import { formatBRL, formatNumber, monthLabel } from "@/lib/format";
-import { exportMonthPDF } from "@/lib/export";
+import { exportMonthPDF, exportSingleMonthFullPDF } from "@/lib/export";
 import { uploadReceipt, deleteReceipt, uploadMonthReceipt, deleteMonthReceipt } from "@/lib/storage";
 import { downloadMonthCoverWithReceipts } from "@/lib/month-receipt";
 import { Button } from "@/components/ui/button";
@@ -235,6 +235,25 @@ export function MonthPage({ reference }: { reference: string }) {
             onClick={() => settings && exportMonthPDF({ month, entries, opening }, settings)}
           >
             <FileDown className="size-4 mr-1" /> PDF do mês
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              if (!settings) return;
+              const tid = toast.loading("Gerando prestação completa do mês...");
+              try {
+                await exportSingleMonthFullPDF(
+                  { month, entries, opening, receiptUrl: month.receipt_url ?? null },
+                  settings,
+                );
+                toast.success("PDF gerado.", { id: tid });
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Falha ao gerar PDF", { id: tid });
+              }
+            }}
+          >
+            <FileDown className="size-4 mr-1" /> Prestação completa (mês)
           </Button>
           <MonthReceiptControls
             month={month}
