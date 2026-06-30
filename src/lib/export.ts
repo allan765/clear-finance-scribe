@@ -489,6 +489,20 @@ export async function exportFullPDF(months: MonthData[], settings: Settings) {
   URL.revokeObjectURL(objectUrl);
 }
 
+/**
+ * Gera o mesmo relatório institucional completo, mas restrito a um único mês.
+ * Inclui capa geral, resumo, demonstrativo por categoria, capa mensal + planilha,
+ * comprovantes digitalizados (se anexados) e página de fechamento.
+ */
+export async function exportSingleMonthFullPDF(md: MonthData, settings: Settings) {
+  const scopedSettings: Settings = {
+    ...settings,
+    period_start: md.month.reference,
+    period_end: md.month.reference,
+  };
+  await exportFullPDF([md], scopedSettings);
+}
+
 export function exportExcel(months: MonthData[], settings: Settings) {
   const wb = XLSX.utils.book_new();
 
