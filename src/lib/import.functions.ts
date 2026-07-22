@@ -54,6 +54,8 @@ const CLASSIFICATIONS = [
   "lazer","educacao",
   // Outros / Serviços
   "faxina","grafica","despesas_animais",
+  // Jurídico
+  "despesas_juridicas",
   // Não classificado
   "nao_classificado",
 ];
