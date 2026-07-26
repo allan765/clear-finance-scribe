@@ -133,6 +133,7 @@ export type Classification =
   // Bancário
   | "despesas_bancarias"
   | "cartao_credito"
+  | "emprestimo"
   | "transferencias"
   // Lazer / Educação
   | "lazer"
