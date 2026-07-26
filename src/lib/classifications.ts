@@ -217,6 +217,7 @@ export const CLASSIFICATIONS: { value: Classification; label: string; group?: st
   // ── BANCÁRIO ──────────────────────────────────────────────
   { value: "despesas_bancarias",    label: "Tarifas bancárias",                group: "Bancário" },
   { value: "cartao_credito",        label: "Cartão de crédito",                group: "Bancário" },
+  { value: "emprestimo",            label: "Empréstimo",                       group: "Bancário" },
   { value: "transferencias",        label: "Transferências",                   group: "Bancário" },
 
   // ── LAZER / EDUCAÇÃO ──────────────────────────────────────

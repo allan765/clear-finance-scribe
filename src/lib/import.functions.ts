@@ -49,7 +49,7 @@ const CLASSIFICATIONS = [
   // Impostos
   "darf_unificado","irrf","guia_simples_nacional","e_social","cartorio",
   // Bancário
-  "despesas_bancarias","cartao_credito","transferencias",
+  "despesas_bancarias","cartao_credito","emprestimo","transferencias",
   // Lazer / Educação
   "lazer","educacao",
   // Outros / Serviços
