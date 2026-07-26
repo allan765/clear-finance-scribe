@@ -141,6 +141,8 @@ export type Classification =
   | "faxina"
   | "grafica"
   | "despesas_animais"
+  | "despesas_com_presente"
+  | "despesas_diversas"
   // Jurídico
   | "despesas_juridicas"
   // Compatibilidade retroativa (não aparecem no menu mas mantêm dados antigos)
@@ -225,6 +227,8 @@ export const CLASSIFICATIONS: { value: Classification; label: string; group?: st
   { value: "faxina",                label: "Faxina / Limpeza",                 group: "Outros" },
   { value: "grafica",               label: "Gráfica",                          group: "Outros" },
   { value: "despesas_animais",      label: "Despesas com animais",             group: "Outros" },
+  { value: "despesas_com_presente", label: "Despesas com presente",          group: "Outros" },
+  { value: "despesas_diversas",     label: "Despesas diversas",                group: "Outros" },
 
   // ── JURÍDICO ──────────────────────────────────────────────
   { value: "despesas_juridicas",    label: "Despesas jurídicas",               group: "Jurídico" },
