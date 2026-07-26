@@ -213,6 +213,7 @@ export type Database = {
         | "despesas_juridicas"
         | "despesas_com_presente"
         | "despesas_diversas"
+        | "emprestimo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -403,6 +404,7 @@ export const Constants = {
         "despesas_juridicas",
         "despesas_com_presente",
         "despesas_diversas",
+        "emprestimo",
       ],
     },
   },

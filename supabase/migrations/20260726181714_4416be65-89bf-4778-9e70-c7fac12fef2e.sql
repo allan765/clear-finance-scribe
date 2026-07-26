@@ -1,0 +1,1 @@
+ALTER TYPE public.classification ADD VALUE IF NOT EXISTS 'emprestimo';
