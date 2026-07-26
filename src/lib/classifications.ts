@@ -141,6 +141,8 @@ export type Classification =
   | "faxina"
   | "grafica"
   | "despesas_animais"
+  | "despesas_com_presente"
+  | "despesas_diversas"
   // Jurídico
   | "despesas_juridicas"
   // Compatibilidade retroativa (não aparecem no menu mas mantêm dados antigos)
