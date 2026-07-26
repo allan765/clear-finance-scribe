@@ -53,7 +53,7 @@ const CLASSIFICATIONS = [
   // Lazer / Educação
   "lazer","educacao",
   // Outros / Serviços
-  "faxina","grafica","despesas_animais",
+  "faxina","grafica","despesas_animais","despesas_com_presente","despesas_diversas",
   // Jurídico
   "despesas_juridicas",
   // Não classificado
