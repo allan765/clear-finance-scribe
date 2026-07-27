@@ -357,10 +357,10 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
       doc.setTextColor(20);
       doc.setFont(TITLE_FONT, "bold");
       doc.setFontSize(28);
-      doc.text(monthLabel(md.month.reference).toUpperCase(), w / 2, 220, { align: "center" });
+      doc.text(monthLabel(md.month.reference).toUpperCase(), w / 2, 195, { align: "center" });
 
       autoTable(doc, {
-        startY: 260,
+        startY: 225,
         head: [["Resumo do mês", "Valor (R$)"]],
         body: [
           ["Saldo anterior", formatNumber(md.opening)],
@@ -388,7 +388,7 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
         monthCats.set(e.classification, cur);
       }
       const sortedCats = Array.from(monthCats.values()).sort((a, b) => b.total - a.total);
-      const TOP = 8;
+      const TOP = 7;
       const shown = sortedCats.slice(0, TOP);
       const rest = sortedCats.slice(TOP);
       const catBody = shown.map((r) => [
