@@ -133,6 +133,8 @@ export function exportMonthPDF(md: MonthData, settings: Settings) {
  */
 function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMonthSeparators?: boolean } = {}) {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+  // Índices (0-based) das páginas de cada mês, preenchidos durante a construção.
+  const monthPageRanges: number[][] = [];
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
