@@ -6,6 +6,18 @@ import type { Entry, Month, Settings } from "./data";
 import { computeRunningBalances } from "./data";
 import { labelOf } from "./classifications";
 import { formatDateBR, formatNumber, monthLabel } from "./format";
+import { LOGO_DATA_URL, LOGO_RATIO } from "./logo";
+
+/** Desenha o logotipo institucional centralizado. Retorna a altura ocupada. */
+function drawLogo(doc: jsPDF, centerX: number, topY: number, width: number) {
+  const height = width / LOGO_RATIO;
+  try {
+    doc.addImage(LOGO_DATA_URL, "PNG", centerX - width / 2, topY, width, height);
+  } catch {
+    /* ignora falha de imagem */
+  }
+  return height;
+}
 
 type MonthData = {
   month: Month;
@@ -198,15 +210,25 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
     margin: { left: 90, right: 90 },
   });
 
-  // Rodapé da capa
+  // Rodapé da capa — logotipo + responsável + assinatura
+  drawLogo(doc, w / 2, h - 268, 210);
+
+  doc.setFont(TITLE_FONT, "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(90);
+  doc.text("RESPONSÁVEL PELA PRESTAÇÃO DE CONTAS", w / 2, h - 168, { align: "center" });
+  doc.setFont(TITLE_FONT, "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(30);
+  doc.text(settings.responsible, w / 2, h - 152, { align: "center" });
+
+  doc.setFont(TITLE_FONT, "normal");
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(0.8);
+  doc.line(140, h - 100, w - 140, h - 100);
+  doc.setLineWidth(0.2);
   doc.setFontSize(10);
   doc.setTextColor(40);
-  doc.text("Responsável pela prestação de contas:", 90, h - 170);
-  doc.setFont(TITLE_FONT, "bold");
-  doc.text(settings.responsible, 90, h - 152);
-  doc.setFont(TITLE_FONT, "normal");
-  doc.setDrawColor(120);
-  doc.line(90, h - 100, w - 90, h - 100);
   doc.text("Assinatura do responsável", w / 2, h - 86, { align: "center" });
   doc.setFontSize(9);
   doc.setTextColor(110);
@@ -335,10 +357,10 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
       doc.setTextColor(20);
       doc.setFont(TITLE_FONT, "bold");
       doc.setFontSize(28);
-      doc.text(monthLabel(md.month.reference).toUpperCase(), w / 2, 220, { align: "center" });
+      doc.text(monthLabel(md.month.reference).toUpperCase(), w / 2, 195, { align: "center" });
 
       autoTable(doc, {
-        startY: 260,
+        startY: 225,
         head: [["Resumo do mês", "Valor (R$)"]],
         body: [
           ["Saldo anterior", formatNumber(md.opening)],
@@ -354,14 +376,76 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
         margin: { left: 90, right: 90 },
       });
 
-      doc.setFontSize(10);
-      doc.setTextColor(60);
+
+      // Demonstrativo de despesas por categoria — do mês
+      const monthCats = new Map<string, { label: string; total: number; count: number }>();
+      for (const e of md.entries) {
+        const d = Number(e.debit);
+        if (!d) continue;
+        const cur = monthCats.get(e.classification) ?? { label: labelOf(e.classification), total: 0, count: 0 };
+        cur.total += d;
+        cur.count += 1;
+        monthCats.set(e.classification, cur);
+      }
+      const sortedCats = Array.from(monthCats.values()).sort((a, b) => b.total - a.total);
+      const TOP = 7;
+      const shown = sortedCats.slice(0, TOP);
+      const rest = sortedCats.slice(TOP);
+      const catBody = shown.map((r) => [
+        r.label,
+        String(r.count),
+        formatNumber(r.total),
+        mdb > 0 ? `${((r.total / mdb) * 100).toFixed(1)}%` : "0,0%",
+      ]);
+      if (rest.length) {
+        const restTotal = rest.reduce((s, r) => s + r.total, 0);
+        const restCount = rest.reduce((s, r) => s + r.count, 0);
+        catBody.push([
+          `Demais categorias (${rest.length})`,
+          String(restCount),
+          formatNumber(restTotal),
+          mdb > 0 ? `${((restTotal / mdb) * 100).toFixed(1)}%` : "0,0%",
+        ]);
+      }
+
+      const afterSummaryY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+      doc.setFont(TITLE_FONT, "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(...BRAND);
+      doc.text("DEMONSTRATIVO DE DESPESAS POR CATEGORIA", w / 2, afterSummaryY + 38, { align: "center" });
+      doc.setTextColor(20);
+
+      autoTable(doc, {
+        startY: afterSummaryY + 50,
+        head: [["Categoria", "Qtd.", "Total (R$)", "%"]],
+        body: catBody.length ? catBody : [["Sem despesas no mês", "0", "0,00", "0,0%"]],
+        foot: [[
+          { content: "TOTAL DE DESPESAS DO MÊS", styles: { fontStyle: "bold" } },
+          { content: String(md.entries.filter((e) => Number(e.debit) > 0).length), styles: { halign: "center", fontStyle: "bold" } },
+          { content: formatNumber(mdb), styles: { halign: "right", fontStyle: "bold" } },
+          { content: mdb > 0 ? "100,0%" : "0,0%", styles: { halign: "right", fontStyle: "bold" } },
+        ]],
+        theme: "grid",
+        styles: { font: TITLE_FONT, fontSize: 9, cellPadding: 4.5, lineColor: [150, 150, 150] },
+        headStyles: { fillColor: BRAND, textColor: 255, halign: "center", fontSize: 9 },
+        footStyles: { fillColor: BRAND_LIGHT, textColor: 20, fontSize: 9 },
+        columnStyles: {
+          1: { halign: "center", cellWidth: 40 },
+          2: { halign: "right", cellWidth: 80 },
+          3: { halign: "right", cellWidth: 50 },
+        },
+        margin: { left: 90, right: 90 },
+      });
+
+      doc.setFontSize(9.5);
+      doc.setTextColor(90);
       doc.text(
         "A seguir, a planilha completa do mês e, na sequência, os comprovantes digitalizados anexados.",
         w / 2,
-        h - 130,
-        { align: "center", maxWidth: w - 160 },
+        h - 110,
+        { align: "center", maxWidth: w - 180 },
       );
+      doc.setTextColor(20);
     }
 
     // Planilha do mês (paisagem) — pode ocupar várias páginas
@@ -407,10 +491,17 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
   doc.setFont(TITLE_FONT, "normal");
   doc.setFontSize(10);
   doc.setTextColor(40);
-  doc.text(doc.splitTextToSize(decl, w - 120), 60, h - 230);
+  doc.text(doc.splitTextToSize(decl, w - 120), 60, h - 300);
 
-  doc.setDrawColor(120);
-  doc.line(80, h - 130, w - 80, h - 130);
+  drawLogo(doc, w / 2, h - 240, 190);
+
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(0.8);
+  doc.line(140, h - 130, w - 140, h - 130);
+  doc.setLineWidth(0.2);
+  doc.setFont(TITLE_FONT, "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(40);
   doc.text("Assinatura do responsável técnico", w / 2, h - 116, { align: "center" });
   doc.setFont(TITLE_FONT, "bold");
   doc.setFontSize(10);
