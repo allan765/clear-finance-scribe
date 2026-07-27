@@ -493,8 +493,15 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
   doc.setTextColor(40);
   doc.text(doc.splitTextToSize(decl, w - 120), 60, h - 230);
 
-  doc.setDrawColor(120);
-  doc.line(80, h - 130, w - 80, h - 130);
+  drawLogo(doc, w / 2, h - 290, 190);
+
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(0.8);
+  doc.line(140, h - 130, w - 140, h - 130);
+  doc.setLineWidth(0.2);
+  doc.setFont(TITLE_FONT, "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(40);
   doc.text("Assinatura do responsável técnico", w / 2, h - 116, { align: "center" });
   doc.setFont(TITLE_FONT, "bold");
   doc.setFontSize(10);
