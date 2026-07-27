@@ -422,7 +422,7 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
 
   footerPage(doc, settings);
 
-  return new Uint8Array(doc.output("arraybuffer"));
+  return { bytes: new Uint8Array(doc.output("arraybuffer")), monthPageRanges };
 }
 
 /**
