@@ -491,9 +491,9 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
   doc.setFont(TITLE_FONT, "normal");
   doc.setFontSize(10);
   doc.setTextColor(40);
-  doc.text(doc.splitTextToSize(decl, w - 120), 60, h - 230);
+  doc.text(doc.splitTextToSize(decl, w - 120), 60, h - 300);
 
-  drawLogo(doc, w / 2, h - 290, 190);
+  drawLogo(doc, w / 2, h - 240, 190);
 
   doc.setDrawColor(...BRAND);
   doc.setLineWidth(0.8);
