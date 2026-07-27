@@ -133,6 +133,8 @@ export function exportMonthPDF(md: MonthData, settings: Settings) {
  */
 function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMonthSeparators?: boolean } = {}) {
   const doc = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" });
+  // Índices (0-based) das páginas de cada mês, preenchidos durante a construção.
+  const monthPageRanges: number[][] = [];
   const w = doc.internal.pageSize.getWidth();
   const h = doc.internal.pageSize.getHeight();
 
@@ -310,6 +312,7 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
     const mdb = md.entries.reduce((s, e) => s + Number(e.debit), 0);
     const monthFinal = md.opening + mc - mdb;
     runningAcc = monthFinal;
+    const startPage = doc.getNumberOfPages(); // páginas já existentes antes deste mês
 
     if (opts.withMonthSeparators) {
       // Capa mensal (retrato)
@@ -361,10 +364,15 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
       );
     }
 
-    // Planilha do mês (paisagem) — "imagem 1"
+    // Planilha do mês (paisagem) — pode ocupar várias páginas
     doc.addPage("a4", "landscape");
     header(doc, settings, `Planilha — ${monthLabel(md.month.reference)}`);
     tableForMonth(doc, md, 75);
+
+    const endPage = doc.getNumberOfPages();
+    const range: number[] = [];
+    for (let p = startPage; p < endPage; p++) range.push(p); // 0-based
+    monthPageRanges.push(range);
   }
 
   // ─── FECHAMENTO FINAL ──────────────────────────────────────
@@ -414,44 +422,29 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
 
   footerPage(doc, settings);
 
-  return new Uint8Array(doc.output("arraybuffer"));
+  return { bytes: new Uint8Array(doc.output("arraybuffer")), monthPageRanges };
 }
 
 /**
  * Async: gera o relatório completo, intercalando capa mensal + planilha + comprovantes digitalizados de cada mês.
  */
 export async function exportFullPDF(months: MonthData[], settings: Settings) {
-  // 1) Constrói esqueleto (capa, resumos, planilhas) sem capas mensais — vamos inseri-las junto aos recibos
-  //    para manter a sequência: capa-mes → planilha → comprovantes daquele mes.
-  // Estratégia: usamos withMonthSeparators=true e depois inserimos os PDFs de recibos após a planilha de cada mês.
+  // Sequência desejada por mês: capa do mês → planilha (1..N páginas) → comprovantes digitalizados.
+  const { bytes: base, monthPageRanges } = buildReportPDF(months, settings, { withMonthSeparators: true });
 
-  const base = buildReportPDF(months, settings, { withMonthSeparators: true });
-  const out = await PDFDocument.load(base);
-
-  // Estrutura de páginas atualmente:
-  //  - 1 capa geral
-  //  - 1 resumo mensal
-  //  - 1 demonstrativo por categoria
-  //  - para cada mês: 1 capa mensal (retrato) + 1 planilha (paisagem)
-  //  - 1 fechamento final
-  // Inseriremos os recibos logo após a planilha de cada mês.
-
-  // pdf-lib não preserva referências de página depois de inserções; trabalhamos com cópia
-  // construindo um novo documento na ordem desejada.
   const result = await PDFDocument.create();
   const baseDoc = await PDFDocument.load(base);
 
-  const fixed = 3; // capa, resumo mensal, demonstrativo
-  const perMonth = 2; // capa do mês + planilha
-
-  // Copia páginas fixas iniciais
+  // Páginas fixas iniciais: capa geral, resumo mensal, demonstrativo por categoria
   const initialPages = await result.copyPages(baseDoc, [0, 1, 2]);
   initialPages.forEach((p) => result.addPage(p));
 
   for (let i = 0; i < months.length; i++) {
-    const baseStart = fixed + i * perMonth;
-    const monthPages = await result.copyPages(baseDoc, [baseStart, baseStart + 1]);
-    monthPages.forEach((p) => result.addPage(p));
+    const range = monthPageRanges[i] ?? [];
+    if (range.length) {
+      const monthPages = await result.copyPages(baseDoc, range);
+      monthPages.forEach((p) => result.addPage(p));
+    }
 
     const url = months[i].receiptUrl;
     if (url) {
@@ -475,8 +468,6 @@ export async function exportFullPDF(months: MonthData[], settings: Settings) {
   closing.forEach((p) => result.addPage(p));
 
   const bytes = await result.save();
-  // Marca para evitar reuso de variável base
-  void out;
 
   const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   const a = document.createElement("a");
