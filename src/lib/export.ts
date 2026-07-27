@@ -6,6 +6,18 @@ import type { Entry, Month, Settings } from "./data";
 import { computeRunningBalances } from "./data";
 import { labelOf } from "./classifications";
 import { formatDateBR, formatNumber, monthLabel } from "./format";
+import { LOGO_DATA_URL, LOGO_RATIO } from "./logo";
+
+/** Desenha o logotipo institucional centralizado. Retorna a altura ocupada. */
+function drawLogo(doc: jsPDF, centerX: number, topY: number, width: number) {
+  const height = width / LOGO_RATIO;
+  try {
+    doc.addImage(LOGO_DATA_URL, "PNG", centerX - width / 2, topY, width, height);
+  } catch {
+    /* ignora falha de imagem */
+  }
+  return height;
+}
 
 type MonthData = {
   month: Month;
