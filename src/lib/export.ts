@@ -429,37 +429,22 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
  * Async: gera o relatório completo, intercalando capa mensal + planilha + comprovantes digitalizados de cada mês.
  */
 export async function exportFullPDF(months: MonthData[], settings: Settings) {
-  // 1) Constrói esqueleto (capa, resumos, planilhas) sem capas mensais — vamos inseri-las junto aos recibos
-  //    para manter a sequência: capa-mes → planilha → comprovantes daquele mes.
-  // Estratégia: usamos withMonthSeparators=true e depois inserimos os PDFs de recibos após a planilha de cada mês.
+  // Sequência desejada por mês: capa do mês → planilha (1..N páginas) → comprovantes digitalizados.
+  const { bytes: base, monthPageRanges } = buildReportPDF(months, settings, { withMonthSeparators: true });
 
-  const base = buildReportPDF(months, settings, { withMonthSeparators: true });
-  const out = await PDFDocument.load(base);
-
-  // Estrutura de páginas atualmente:
-  //  - 1 capa geral
-  //  - 1 resumo mensal
-  //  - 1 demonstrativo por categoria
-  //  - para cada mês: 1 capa mensal (retrato) + 1 planilha (paisagem)
-  //  - 1 fechamento final
-  // Inseriremos os recibos logo após a planilha de cada mês.
-
-  // pdf-lib não preserva referências de página depois de inserções; trabalhamos com cópia
-  // construindo um novo documento na ordem desejada.
   const result = await PDFDocument.create();
   const baseDoc = await PDFDocument.load(base);
 
-  const fixed = 3; // capa, resumo mensal, demonstrativo
-  const perMonth = 2; // capa do mês + planilha
-
-  // Copia páginas fixas iniciais
+  // Páginas fixas iniciais: capa geral, resumo mensal, demonstrativo por categoria
   const initialPages = await result.copyPages(baseDoc, [0, 1, 2]);
   initialPages.forEach((p) => result.addPage(p));
 
   for (let i = 0; i < months.length; i++) {
-    const baseStart = fixed + i * perMonth;
-    const monthPages = await result.copyPages(baseDoc, [baseStart, baseStart + 1]);
-    monthPages.forEach((p) => result.addPage(p));
+    const range = monthPageRanges[i] ?? [];
+    if (range.length) {
+      const monthPages = await result.copyPages(baseDoc, range);
+      monthPages.forEach((p) => result.addPage(p));
+    }
 
     const url = months[i].receiptUrl;
     if (url) {
