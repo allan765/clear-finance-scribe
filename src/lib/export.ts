@@ -312,6 +312,7 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
     const mdb = md.entries.reduce((s, e) => s + Number(e.debit), 0);
     const monthFinal = md.opening + mc - mdb;
     runningAcc = monthFinal;
+    const startPage = doc.getNumberOfPages(); // páginas já existentes antes deste mês
 
     if (opts.withMonthSeparators) {
       // Capa mensal (retrato)
