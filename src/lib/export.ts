@@ -468,8 +468,6 @@ export async function exportFullPDF(months: MonthData[], settings: Settings) {
   closing.forEach((p) => result.addPage(p));
 
   const bytes = await result.save();
-  // Marca para evitar reuso de variável base
-  void out;
 
   const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   const a = document.createElement("a");
