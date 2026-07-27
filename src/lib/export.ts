@@ -364,10 +364,15 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
       );
     }
 
-    // Planilha do mês (paisagem) — "imagem 1"
+    // Planilha do mês (paisagem) — pode ocupar várias páginas
     doc.addPage("a4", "landscape");
     header(doc, settings, `Planilha — ${monthLabel(md.month.reference)}`);
     tableForMonth(doc, md, 75);
+
+    const endPage = doc.getNumberOfPages();
+    const range: number[] = [];
+    for (let p = startPage; p < endPage; p++) range.push(p); // 0-based
+    monthPageRanges.push(range);
   }
 
   // ─── FECHAMENTO FINAL ──────────────────────────────────────
