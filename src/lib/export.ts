@@ -210,15 +210,25 @@ function buildReportPDF(months: MonthData[], settings: Settings, opts: { withMon
     margin: { left: 90, right: 90 },
   });
 
-  // Rodapé da capa
+  // Rodapé da capa — logotipo + responsável + assinatura
+  drawLogo(doc, w / 2, h - 268, 210);
+
+  doc.setFont(TITLE_FONT, "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(90);
+  doc.text("RESPONSÁVEL PELA PRESTAÇÃO DE CONTAS", w / 2, h - 168, { align: "center" });
+  doc.setFont(TITLE_FONT, "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(30);
+  doc.text(settings.responsible, w / 2, h - 152, { align: "center" });
+
+  doc.setFont(TITLE_FONT, "normal");
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(0.8);
+  doc.line(140, h - 100, w - 140, h - 100);
+  doc.setLineWidth(0.2);
   doc.setFontSize(10);
   doc.setTextColor(40);
-  doc.text("Responsável pela prestação de contas:", 90, h - 170);
-  doc.setFont(TITLE_FONT, "bold");
-  doc.text(settings.responsible, 90, h - 152);
-  doc.setFont(TITLE_FONT, "normal");
-  doc.setDrawColor(120);
-  doc.line(90, h - 100, w - 90, h - 100);
   doc.text("Assinatura do responsável", w / 2, h - 86, { align: "center" });
   doc.setFontSize(9);
   doc.setTextColor(110);
