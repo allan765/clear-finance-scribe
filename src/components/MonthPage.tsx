@@ -678,6 +678,11 @@ function MonthReceiptControls({
   const hasReceipt = !!month.receipt_url;
 
   const handlePick = () => {
+    if (month.closed) {
+      toast.error("Mês fechado. Reabra o mês para substituir o PDF.");
+      return;
+    }
+    if (hasReceipt && !confirm("Já existe um PDF anexado neste mês. O novo arquivo vai SUBSTITUIR o atual. Continuar?")) return;
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/pdf";
@@ -745,10 +750,14 @@ function MonthReceiptControls({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
-        <DropdownMenuItem onClick={handlePick} disabled={month.closed}>
+        <DropdownMenuItem onClick={handlePick}>
           <div>
             <div className="font-medium">{hasReceipt ? "Substituir PDF anexado" : "Anexar PDF de comprovantes"}</div>
-            <div className="text-xs text-muted-foreground">Notas fiscais e recibos digitalizados (até 50 MB)</div>
+            <div className="text-xs text-muted-foreground">
+              {hasReceipt
+                ? "O arquivo atual é apagado e o novo (com mais páginas) entra no lugar"
+                : "Notas fiscais e recibos digitalizados (até 50 MB)"}
+            </div>
           </div>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDownload}>
