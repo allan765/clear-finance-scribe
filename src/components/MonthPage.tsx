@@ -678,6 +678,11 @@ function MonthReceiptControls({
   const hasReceipt = !!month.receipt_url;
 
   const handlePick = () => {
+    if (month.closed) {
+      toast.error("Mês fechado. Reabra o mês para substituir o PDF.");
+      return;
+    }
+    if (hasReceipt && !confirm("Já existe um PDF anexado neste mês. O novo arquivo vai SUBSTITUIR o atual. Continuar?")) return;
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "application/pdf";
