@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { PDFDocument } from "pdf-lib";
-import { appendPdfAsCompressedImages, COMPRESSION_TIERS } from "./pdf-compress";
+import { appendPdfAsCompressedImages } from "./pdf-compress";
 import type { Entry, Month, Settings } from "./data";
 import { computeRunningBalances } from "./data";
 import { labelOf } from "./classifications";
@@ -578,25 +578,30 @@ export async function exportFullPDF(months: MonthData[], settings: Settings) {
     return await result.save({ useObjectStreams: true });
   }
 
-  const LIMIT = 10 * 1024 * 1024; // 10 MB
-  let bytes = await assemble(null);
-  if (bytes.byteLength > LIMIT) {
-    for (const tier of COMPRESSION_TIERS) {
-      const candidate = await assemble(tier);
-      if (candidate.byteLength < bytes.byteLength) bytes = candidate;
-      if (bytes.byteLength <= LIMIT) break;
-    }
+  // Entrega sempre a cópia fiel dos comprovantes: a rasterização para reduzir
+  // o tamanho consumia memória demais e travava a aba antes de gerar o arquivo.
+  let bytes: Uint8Array;
+  try {
+    bytes = await assemble(null);
+  } catch (e) {
+    console.error("Falha ao montar o PDF consolidado", e);
+    throw e;
   }
+
+
 
   const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   const a = document.createElement("a");
   const objectUrl = URL.createObjectURL(blob);
   a.href = objectUrl;
   a.download = `prestacao-completa-${settings.period_start}_${settings.period_end}.pdf`;
+  a.rel = "noopener";
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(objectUrl);
+  // Revogar imediatamente pode cancelar o download em alguns navegadores.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+
 }
 
 
