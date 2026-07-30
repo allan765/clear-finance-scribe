@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { PDFDocument } from "pdf-lib";
+import { appendPdfAsCompressedImages, COMPRESSION_TIERS } from "./pdf-compress";
 import type { Entry, Month, Settings } from "./data";
 import { computeRunningBalances } from "./data";
 import { labelOf } from "./classifications";
@@ -523,42 +524,69 @@ export async function exportFullPDF(months: MonthData[], settings: Settings) {
   // Sequência desejada por mês: capa do mês → planilha (1..N páginas) → comprovantes digitalizados.
   const { bytes: base, monthPageRanges } = buildReportPDF(months, settings, { withMonthSeparators: true });
 
-  const result = await PDFDocument.create();
-  const baseDoc = await PDFDocument.load(base);
-
-  // Páginas fixas iniciais: capa geral, resumo mensal, demonstrativo por categoria
-  const initialPages = await result.copyPages(baseDoc, [0, 1, 2]);
-  initialPages.forEach((p) => result.addPage(p));
-
-  for (let i = 0; i < months.length; i++) {
-    const range = monthPageRanges[i] ?? [];
-    if (range.length) {
-      const monthPages = await result.copyPages(baseDoc, range);
-      monthPages.forEach((p) => result.addPage(p));
-    }
-
-    const url = months[i].receiptUrl;
-    if (url) {
+  // Baixa uma única vez os comprovantes de cada mês
+  const receiptBuffers: (ArrayBuffer | null)[] = [];
+  for (const m of months) {
+    let buf: ArrayBuffer | null = null;
+    if (m.receiptUrl) {
       try {
-        const resp = await fetch(url);
-        if (resp.ok) {
-          const buf = await resp.arrayBuffer();
-          const src = await PDFDocument.load(buf);
-          const pages = await result.copyPages(src, src.getPageIndices());
-          pages.forEach((p) => result.addPage(p));
-        }
+        const resp = await fetch(m.receiptUrl);
+        if (resp.ok) buf = await resp.arrayBuffer();
       } catch (e) {
-        console.warn("Falha ao mesclar comprovantes do mês", months[i].month.reference, e);
+        console.warn("Falha ao baixar comprovantes do mês", m.month.reference, e);
       }
     }
+    receiptBuffers.push(buf);
   }
 
-  // Página de fechamento (última do base)
-  const lastIndex = baseDoc.getPageCount() - 1;
-  const closing = await result.copyPages(baseDoc, [lastIndex]);
-  closing.forEach((p) => result.addPage(p));
+  // Monta o documento; tier = null → cópia fiel das páginas dos comprovantes,
+  // tier = {scale,quality} → comprovantes rasterizados em JPEG comprimido.
+  async function assemble(tier: { scale: number; quality: number } | null) {
+    const result = await PDFDocument.create();
+    const baseDoc = await PDFDocument.load(base);
 
-  const bytes = await result.save();
+    const initialPages = await result.copyPages(baseDoc, [0, 1, 2]);
+    initialPages.forEach((p) => result.addPage(p));
+
+    for (let i = 0; i < months.length; i++) {
+      const range = monthPageRanges[i] ?? [];
+      if (range.length) {
+        const monthPages = await result.copyPages(baseDoc, range);
+        monthPages.forEach((p) => result.addPage(p));
+      }
+
+      const buf = receiptBuffers[i];
+      if (buf) {
+        try {
+          if (tier) {
+            await appendPdfAsCompressedImages(result, buf, tier);
+          } else {
+            const src = await PDFDocument.load(buf.slice(0));
+            const pages = await result.copyPages(src, src.getPageIndices());
+            pages.forEach((p) => result.addPage(p));
+          }
+        } catch (e) {
+          console.warn("Falha ao mesclar comprovantes do mês", months[i].month.reference, e);
+        }
+      }
+    }
+
+    const lastIndex = baseDoc.getPageCount() - 1;
+    const closing = await result.copyPages(baseDoc, [lastIndex]);
+    closing.forEach((p) => result.addPage(p));
+
+    return await result.save({ useObjectStreams: true });
+  }
+
+  const LIMIT = 10 * 1024 * 1024; // 10 MB
+  let bytes = await assemble(null);
+  if (bytes.byteLength > LIMIT) {
+    for (const tier of COMPRESSION_TIERS) {
+      const candidate = await assemble(tier);
+      if (candidate.byteLength < bytes.byteLength) bytes = candidate;
+      if (bytes.byteLength <= LIMIT) break;
+    }
+  }
 
   const blob = new Blob([bytes as BlobPart], { type: "application/pdf" });
   const a = document.createElement("a");
@@ -570,6 +598,7 @@ export async function exportFullPDF(months: MonthData[], settings: Settings) {
   a.remove();
   URL.revokeObjectURL(objectUrl);
 }
+
 
 /**
  * Gera o mesmo relatório institucional completo, mas restrito a um único mês.
