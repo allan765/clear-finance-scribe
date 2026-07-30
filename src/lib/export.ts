@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { PDFDocument } from "pdf-lib";
+import { appendPdfAsCompressedImages, COMPRESSION_TIERS } from "./pdf-compress";
 import type { Entry, Month, Settings } from "./data";
 import { computeRunningBalances } from "./data";
 import { labelOf } from "./classifications";
